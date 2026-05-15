@@ -31,4 +31,11 @@ export const agentenApi = {
         episoden: number;
       }>(`/api/agenten/${id}/praeferenzen`)
       .then((r) => r.data),
+  beziehungsGraph: () =>
+    apiClient
+      .get<{
+        knoten: { id: string; agent_id: string | null; typ: 'agent' | 'extern'; beruf: string }[];
+        kanten: { von: string; nach: string; beschreibung: string }[];
+      }>('/api/agenten/beziehungs-graph')
+      .then((r) => r.data),
 };

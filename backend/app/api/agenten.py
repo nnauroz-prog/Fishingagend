@@ -27,6 +27,42 @@ async def liste_agenten(
     return alle[offset : offset + limit]
 
 
+@router.get("/beziehungs-graph")
+async def beziehungs_graph(dienst: AgentDienst = Depends(hole_agent_dienst)) -> dict:
+    """Aggregat aller gelernten Beziehungen als Knoten/Kanten-Graph.
+
+    Knoten = Agenten, Kanten = Eintraege aus persona.beziehungen.
+    Eine Kante kann auf einen Namen zeigen, der nicht selbst Agent ist —
+    diese werden als "extern" markiert (z. B. Personen aus dem GraphRAG,
+    die noch keine eigenen Agenten sind).
+    """
+    alle = await dienst.liste()
+    agent_namen = {a.persona.name for a in alle}
+
+    knoten: list[dict] = [
+        {
+            "id": a.persona.name,
+            "agent_id": a.id,
+            "typ": "agent",
+            "beruf": a.persona.beruf or "",
+        }
+        for a in alle
+    ]
+    kanten: list[dict] = []
+    extern: set[str] = set()
+    for a in alle:
+        for ziel, beschreibung in a.persona.beziehungen.items():
+            kanten.append(
+                {"von": a.persona.name, "nach": ziel, "beschreibung": beschreibung}
+            )
+            if ziel not in agent_namen:
+                extern.add(ziel)
+    for name in extern:
+        knoten.append({"id": name, "agent_id": None, "typ": "extern", "beruf": ""})
+
+    return {"knoten": knoten, "kanten": kanten}
+
+
 @router.post("", response_model=Agent, status_code=status.HTTP_201_CREATED)
 async def erstelle_agent(
     eingabe: AgentErstellen,

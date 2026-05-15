@@ -114,7 +114,10 @@ class SimulationDienst:
             await self._setze_status(sim_id, SimulationStatus.FEHLGESCHLAGEN)
             raise
 
-        # Lern-Phase nach Abschluss: Reflexionen, Beziehungen, Konsolidierung
+        # Lern-Phase nach Abschluss: synchron, damit der Aufrufer das
+        # Endergebnis (gelernte Beziehungen, Reflexionen) direkt sieht.
+        # Bei vielen Agenten kann das langsam werden — deshalb startet die
+        # API-Schicht Sims standardmaessig im Hintergrund.
         fertige = await self.hole(sim_id)
         if fertige and fertige.status == SimulationStatus.ABGESCHLOSSEN:
             try:
@@ -122,6 +125,7 @@ class SimulationDienst:
                 await hole_ereignis_bus().veroeffentliche(
                     f"sim:{sim_id}", {"typ": "lernen", **ergebnis}
                 )
+                fertige = await self.hole(sim_id)  # Beziehungen wurden geupdatet
             except Exception:
                 logger.exception("lernen_fehlgeschlagen", sim_id=sim_id)
 

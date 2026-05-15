@@ -23,6 +23,7 @@ const links = [
   { ziel: '/', schluessel: 'navigation.startseite' },
   { ziel: '/pipeline', schluessel: 'navigation.pipeline' },
   { ziel: '/agenten', schluessel: 'navigation.agenten' },
+  { ziel: '/beziehungen', schluessel: 'navigation.beziehungen' },
   { ziel: '/chat', schluessel: 'navigation.chat' },
   { ziel: '/simulation', schluessel: 'navigation.simulation' },
   { ziel: '/graphrag', schluessel: 'navigation.graphrag' },

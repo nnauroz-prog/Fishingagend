@@ -7,6 +7,7 @@
     "startseite": "Startseite",
     "pipeline": "Pipeline",
     "agenten": "Agenten",
+    "beziehungen": "Beziehungen",
     "chat": "Chat",
     "simulation": "Simulation",
     "graphrag": "Wissensgraph",
@@ -115,6 +116,16 @@
     "personen": "Wichtige Personen",
     "begriffe": "Häufige Begriffe",
     "episoden": "Episoden im Gedächtnis"
+  },
+  "beziehungs_graph": {
+    "titel": "Beziehungs-Graph",
+    "einleitung": "Alle Agenten und ihre gelernten Beziehungen — wächst nach jeder Simulation.",
+    "leer": "Noch keine Beziehungen. Lass eine Simulation laufen, dann lernen die Agenten sich kennen.",
+    "detail": "Details",
+    "kanten": "Verbindungen",
+    "knoten_zaehler": "Knoten",
+    "kanten_zaehler": "Kanten",
+    "hover_hinweis": "Bewege die Maus über einen Knoten für Details. Klick öffnet die Agent-Seite."
   },
   "nicht_gefunden": {
     "titel": "Diese Seite existiert nicht.",

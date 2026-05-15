@@ -7,6 +7,7 @@
     "startseite": "Home",
     "pipeline": "Pipeline",
     "agenten": "Agents",
+    "beziehungen": "Relationships",
     "chat": "Chat",
     "simulation": "Simulation",
     "graphrag": "Knowledge graph",
@@ -115,6 +116,16 @@
     "personen": "Important people",
     "begriffe": "Frequent terms",
     "episoden": "memory episodes"
+  },
+  "beziehungs_graph": {
+    "titel": "Relationship graph",
+    "einleitung": "All agents and their learned relationships — grows after every simulation.",
+    "leer": "No relationships yet. Run a simulation so agents get to know each other.",
+    "detail": "Details",
+    "kanten": "Connections",
+    "knoten_zaehler": "nodes",
+    "kanten_zaehler": "edges",
+    "hover_hinweis": "Hover a node for details. Click opens the agent page."
   },
   "nicht_gefunden": {
     "titel": "This page does not exist.",

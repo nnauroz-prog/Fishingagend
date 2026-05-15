@@ -22,6 +22,12 @@ export const router = createRouter({
       meta: { titel: 'Agent' },
     },
     {
+      path: '/beziehungen',
+      name: 'beziehungen',
+      component: () => import('@/views/BeziehungsGraphView.vue'),
+      meta: { titel: 'Beziehungen' },
+    },
+    {
       path: '/chat/:agentId?',
       name: 'chat',
       component: () => import('@/views/ChatView.vue'),
