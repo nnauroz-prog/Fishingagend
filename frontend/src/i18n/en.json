@@ -8,6 +8,7 @@
     "agenten": "Agents",
     "chat": "Chat",
     "simulation": "Simulation",
+    "graphrag": "Knowledge graph",
     "berichte": "Reports",
     "thema_wechseln": "Toggle theme"
   },
@@ -56,6 +57,21 @@
     "titel": "Reports",
     "leer": "No reports yet. Start a simulation first.",
     "anzeigen": "Show report"
+  },
+  "graphrag": {
+    "titel": "Knowledge graph",
+    "einleitung": "Paste text — entities and relations are extracted and can then be queried.",
+    "extrahieren": "Extract entities",
+    "extrahieren_knopf": "Extract",
+    "verarbeitet": "Processing …",
+    "text_platzhalter": "Raw text — e.g. a news article, a report, a protocol.",
+    "abfragen": "Query knowledge graph",
+    "frage_platzhalter": "What do you want to know?",
+    "fragen": "Ask"
+  },
+  "nicht_gefunden": {
+    "titel": "This page does not exist.",
+    "text": "The requested URL could not be matched."
   },
   "fehler": {
     "allgemein": "An error occurred.",

@@ -16,6 +16,12 @@ export const router = createRouter({
       meta: { titel: 'Agenten' },
     },
     {
+      path: '/agenten/:id',
+      name: 'agent-detail',
+      component: () => import('@/views/AgentDetailView.vue'),
+      meta: { titel: 'Agent' },
+    },
+    {
       path: '/chat/:agentId?',
       name: 'chat',
       component: () => import('@/views/ChatView.vue'),
@@ -28,10 +34,28 @@ export const router = createRouter({
       meta: { titel: 'Simulation' },
     },
     {
+      path: '/simulation/:id',
+      name: 'simulation-detail',
+      component: () => import('@/views/SimulationDetailView.vue'),
+      meta: { titel: 'Simulation' },
+    },
+    {
+      path: '/graphrag',
+      name: 'graphrag',
+      component: () => import('@/views/GraphRAGView.vue'),
+      meta: { titel: 'GraphRAG' },
+    },
+    {
       path: '/berichte',
       name: 'berichte',
       component: () => import('@/views/BerichteView.vue'),
       meta: { titel: 'Berichte' },
+    },
+    {
+      path: '/:pfad(.*)*',
+      name: 'nicht-gefunden',
+      component: () => import('@/views/NichtGefundenView.vue'),
+      meta: { titel: 'Nicht gefunden' },
     },
   ],
 });

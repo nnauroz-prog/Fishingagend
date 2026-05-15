@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { RouterLink } from 'vue-router';
 
 import type { Agent } from '@/api/typen';
 
@@ -35,7 +36,10 @@ const { t } = useI18n();
       </li>
     </ul>
 
-    <footer class="mt-2 flex gap-2">
+    <footer class="mt-2 flex flex-wrap gap-2">
+      <RouterLink :to="`/agenten/${agent.id}`" class="knopf-sekundaer text-xs">
+        Details
+      </RouterLink>
       <button class="knopf-primaer text-xs" @click="$emit('chatten', agent.id)">
         {{ t('navigation.chat') }}
       </button>

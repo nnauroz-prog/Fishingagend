@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { RouterLink } from 'vue-router';
 
 import type { Simulation } from '@/api/typen';
 
@@ -14,7 +15,12 @@ const statusKey = computed(() => `simulation.status_${props.simulation.status}`)
   <article class="karte">
     <header class="mb-3 flex items-start justify-between">
       <div>
-        <h3 class="text-lg font-semibold">{{ simulation.name }}</h3>
+        <RouterLink
+          :to="`/simulation/${simulation.id}`"
+          class="text-lg font-semibold hover:text-markenblau-700 dark:hover:text-markenblau-500"
+        >
+          {{ simulation.name }}
+        </RouterLink>
         <p v-if="simulation.beschreibung" class="text-sm text-slate-500">
           {{ simulation.beschreibung }}
         </p>

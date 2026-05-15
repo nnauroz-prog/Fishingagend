@@ -8,6 +8,7 @@
     "agenten": "Agenten",
     "chat": "Chat",
     "simulation": "Simulation",
+    "graphrag": "Wissensgraph",
     "berichte": "Berichte",
     "thema_wechseln": "Thema wechseln"
   },
@@ -56,6 +57,21 @@
     "titel": "Berichte",
     "leer": "Noch keine Berichte. Starte zuerst eine Simulation.",
     "anzeigen": "Bericht anzeigen"
+  },
+  "graphrag": {
+    "titel": "Wissensgraph",
+    "einleitung": "Texte hineingeben — Entitäten und Beziehungen werden extrahiert und können danach befragt werden.",
+    "extrahieren": "Entitäten extrahieren",
+    "extrahieren_knopf": "Extrahieren",
+    "verarbeitet": "Wird verarbeitet …",
+    "text_platzhalter": "Roher Text — z. B. ein Zeitungsartikel, ein Bericht, ein Protokoll.",
+    "abfragen": "Wissensgraph befragen",
+    "frage_platzhalter": "Was möchtest du wissen?",
+    "fragen": "Fragen"
+  },
+  "nicht_gefunden": {
+    "titel": "Diese Seite existiert nicht.",
+    "text": "Die angeforderte URL konnte nicht zugeordnet werden."
   },
   "fehler": {
     "allgemein": "Es ist ein Fehler aufgetreten.",
