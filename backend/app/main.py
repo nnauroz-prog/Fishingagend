@@ -8,7 +8,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agenten, audit, auth, berichte, chat, graphrag, simulation, zustand
+from app.api import (
+    agenten,
+    audit,
+    auth,
+    backup,
+    berichte,
+    chat,
+    graphrag,
+    simulation,
+    vorlagen,
+    zustand,
+)
 from app.api import einstellungen as einstellungen_api
 from app.config import einstellungen
 from app.datenbank import initialisiere_datenbank
@@ -56,6 +67,8 @@ app.include_router(berichte.router, prefix="/api/berichte", tags=["Berichte"])
 app.include_router(graphrag.router, prefix="/api/graphrag", tags=["GraphRAG"])
 app.include_router(einstellungen_api.router, prefix="/api/einstellungen", tags=["Einstellungen"])
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit"])
+app.include_router(vorlagen.router, prefix="/api/vorlagen", tags=["Vorlagen"])
+app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
 
 
 @app.get("/")
