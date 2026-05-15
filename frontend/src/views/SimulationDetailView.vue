@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { simulationApi } from '@/api/simulation';
-import type { Simulation } from '@/api/typen';
+import type { Simulation, SimulationSchritt } from '@/api/typen';
+import { abonniereSimulation } from '@/api/websocket';
 import VergleichsAnsicht from '@/components/VergleichsAnsicht.vue';
 import { useToastStore } from '@/store/toasts';
 
@@ -15,7 +16,7 @@ const toasts = useToastStore();
 const sim = ref<Simulation | null>(null);
 const ladend = ref(true);
 const ansicht = ref<'spalten' | 'vergleich'>('spalten');
-let timer: ReturnType<typeof setInterval> | null = null;
+let abbrechen: (() => void) | null = null;
 
 const id = computed(() => route.params.id as string);
 
@@ -50,15 +51,34 @@ async function starte() {
   await laden();
 }
 
+function verbinde() {
+  abbrechen?.();
+  abbrechen = abonniereSimulation(id.value, (e) => {
+    if (!sim.value) return;
+    if (e.typ === 'schritt') {
+      const neuer: SimulationSchritt = {
+        nummer: e.nummer,
+        welt: e.welt,
+        ereignisse: e.ereignisse,
+        agent_zustaende: {},
+      };
+      sim.value.verlauf.push(neuer);
+    } else if (e.typ === 'status') {
+      sim.value.status = e.status;
+      if (e.status === 'abgeschlossen') {
+        toasts.erfolg('Simulation abgeschlossen.');
+      }
+    }
+  });
+}
+
 onMounted(async () => {
   await laden();
-  timer = setInterval(() => {
-    if (sim.value && sim.value.status === 'laeuft') laden();
-  }, 2000);
+  verbinde();
 });
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer);
+  abbrechen?.();
 });
 </script>
 

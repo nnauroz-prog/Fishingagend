@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.dienste.agent_dienst import AgentDienst, hole_agent_dienst
@@ -18,8 +18,13 @@ class PersonaAusSaat(BaseModel):
 
 
 @router.get("", response_model=list[Agent])
-async def liste_agenten(dienst: AgentDienst = Depends(hole_agent_dienst)) -> list[Agent]:
-    return await dienst.liste()
+async def liste_agenten(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    dienst: AgentDienst = Depends(hole_agent_dienst),
+) -> list[Agent]:
+    alle = await dienst.liste()
+    return alle[offset : offset + limit]
 
 
 @router.post("", response_model=Agent, status_code=status.HTTP_201_CREATED)

@@ -16,6 +16,7 @@ from app.datenbank import (
     kodiere_json,
     session_factory,
 )
+from app.dienste.ereignis_bus import hole_ereignis_bus
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
 from app.modelle.agent import Agent
 from app.modelle.persona import Persona
@@ -116,6 +117,9 @@ class SimulationDienst:
             if zeile:
                 zeile.status = status.value
                 await session.commit()
+        await hole_ereignis_bus().veroeffentliche(
+            f"sim:{sim_id}", {"typ": "status", "status": status.value}
+        )
 
     async def _lade_agenten(self, ids: list[str]) -> list[Agent]:
         async with session_factory()() as session:
@@ -186,6 +190,16 @@ class SimulationDienst:
                 )
             )
             await session.commit()
+
+        await hole_ereignis_bus().veroeffentliche(
+            f"sim:{sim_id}",
+            {
+                "typ": "schritt",
+                "nummer": nummer,
+                "welt": welt,
+                "ereignisse": ergebnisse,
+            },
+        )
         return schritt
 
     async def _zu_modell(self, session, zeile: SimulationZeile) -> Simulation:
