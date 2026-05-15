@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import (
     agenten,
@@ -71,10 +75,51 @@ app.include_router(vorlagen.router, prefix="/api/vorlagen", tags=["Vorlagen"])
 app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
 
 
-@app.get("/")
-async def wurzel() -> dict[str, str]:
-    return {
-        "name": "Fishingagend",
-        "version": "0.1.0",
-        "dokumentation": "/docs",
-    }
+# --- Statisches Frontend ausliefern (wenn vorhanden) ---
+# Im Production-Container packen wir das Frontend-Bundle nach /app/statisch und
+# servieren es von derselben Origin. Asset-Pfade werden direkt gemountet, die
+# Wurzel und SPA-Routen liefern index.html.
+_statisch = Path(os.getenv("STATISCH_PFAD", "")).resolve() if os.getenv("STATISCH_PFAD") else None
+
+if _statisch and _statisch.exists():
+    _assets = _statisch / "assets"
+    if _assets.exists():
+        app.mount("/assets", StaticFiles(directory=_assets), name="assets")
+
+    for datei in ("favicon.svg", "favicon.ico"):
+        _pfad = _statisch / datei
+        if _pfad.exists():
+            app.add_api_route(
+                f"/{datei}",
+                lambda p=_pfad: FileResponse(p),  # type: ignore[misc]
+                include_in_schema=False,
+            )
+
+    @app.get("/", include_in_schema=False)
+    async def wurzel() -> FileResponse:
+        return FileResponse(_statisch / "index.html")
+
+    @app.middleware("http")
+    async def spa_fallback(request: Request, call_next):
+        antwort = await call_next(request)
+        if antwort.status_code != 404:
+            return antwort
+        pfad = request.url.path
+        if pfad.startswith(("/api/", "/docs", "/openapi.json", "/redoc", "/assets/")):
+            return antwort
+        return FileResponse(_statisch / "index.html")
+
+else:
+
+    @app.get("/")
+    async def wurzel_json() -> dict[str, str]:
+        return {
+            "name": "Fishingagend",
+            "version": "0.1.0",
+            "dokumentation": "/docs",
+        }
+
+
+@app.exception_handler(404)
+async def _nicht_gefunden(request: Request, _exc) -> JSONResponse:
+    return JSONResponse({"detail": "Nicht gefunden", "pfad": request.url.path}, status_code=404)
