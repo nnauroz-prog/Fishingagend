@@ -1,0 +1,49 @@
+services:
+  # Backend: FastAPI + SQLite, served auf Render Web Service
+  - type: web
+    name: fishingagend-backend
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: claude/general-session-utthR
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/zustand
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: DEMO_DATEN_EINSPIELEN
+        value: "true"
+      - key: ENTWICKLUNG
+        value: "false"
+      - key: CORS_URSPRUENGE
+        value: "*"
+      - key: JWT_GEHEIMNIS
+        generateValue: true
+      # Optional: setze diese in der Render-UI, dann redet die App echt
+      # statt mit Mock-LLM zu antworten.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODELL
+        value: claude-opus-4-7
+
+  # Frontend: Vue-Build als statische Site
+  - type: web
+    name: fishingagend-frontend
+    runtime: static
+    plan: free
+    branch: claude/general-session-utthR
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASIS
+        fromService:
+          name: fishingagend-backend
+          type: web
+          property: host

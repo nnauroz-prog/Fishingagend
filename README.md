@@ -4,9 +4,15 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
-![Backend tests](https://img.shields.io/badge/backend%20tests-60%2F60%20%E2%9C%93-success)
+![Backend tests](https://img.shields.io/badge/backend%20tests-65%2F65%20%E2%9C%93-success)
 ![Frontend tests](https://img.shields.io/badge/frontend%20tests-18%2F18%20%E2%9C%93-success)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+
+## 1-Klick-Deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nnauroz-prog/fishingagend/tree/claude/general-session-utthR)
+
+Knopf auf dem Handy oder Desktop klicken → mit GitHub bei Render anmelden → die `render.yaml` wird automatisch erkannt und Backend + Frontend deployen sich. Nach ~5 min hast du eine `.onrender.com`-URL, die du direkt im Mobil-Browser nutzen kannst.
 
 ## Architektur
 
