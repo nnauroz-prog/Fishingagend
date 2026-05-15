@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "Fishingagend",
+    "untertitel": "Multi-Agenten-KI-Vorhersage-Engine"
+  },
+  "navigation": {
+    "startseite": "Startseite",
+    "agenten": "Agenten",
+    "chat": "Chat",
+    "simulation": "Simulation",
+    "berichte": "Berichte",
+    "thema_wechseln": "Thema wechseln"
+  },
+  "startseite": {
+    "ueberschrift": "Willkommen bei Fishingagend",
+    "einleitung": "Erstelle Agenten mit eigener Persönlichkeit, lasse sie in einer simulierten Welt interagieren und beobachte, wie sich Entscheidungen auf die Zukunft auswirken.",
+    "los": "Loslegen"
+  },
+  "agenten": {
+    "titel": "Agenten",
+    "neuer_agent": "Neuen Agenten anlegen",
+    "leer": "Noch keine Agenten vorhanden.",
+    "name": "Name",
+    "beruf": "Beruf",
+    "hintergrund": "Hintergrund",
+    "werte": "Werte (kommagetrennt)",
+    "speichern": "Speichern",
+    "abbrechen": "Abbrechen",
+    "loeschen": "Löschen"
+  },
+  "chat": {
+    "titel": "Chat",
+    "platzhalter": "Schreibe eine Nachricht ...",
+    "senden": "Senden",
+    "agent_waehlen": "Bitte zuerst einen Agenten auswählen.",
+    "denkt": "Agent denkt nach ..."
+  },
+  "simulation": {
+    "titel": "Simulation",
+    "neue": "Neue Simulation planen",
+    "starten": "Starten",
+    "schritte": "Schritte",
+    "agenten": "Agenten",
+    "variable": "Variable (JSON)",
+    "dual_modus": "Dual-Modus (Kontroll- vs. Variantenwelt)",
+    "status_geplant": "geplant",
+    "status_laeuft": "läuft",
+    "status_abgeschlossen": "abgeschlossen",
+    "status_fehlgeschlagen": "fehlgeschlagen"
+  },
+  "berichte": {
+    "titel": "Berichte",
+    "leer": "Noch keine Berichte. Starte zuerst eine Simulation.",
+    "anzeigen": "Bericht anzeigen"
+  },
+  "fehler": {
+    "allgemein": "Es ist ein Fehler aufgetreten.",
+    "netzwerk": "Verbindung zum Server nicht möglich."
+  }
+}

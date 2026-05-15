@@ -1,0 +1,9 @@
+{
+  "_hinweis": "Backend-seitige Übersetzungen; das Frontend besitzt eigene Locales unter frontend/src/i18n/.",
+  "system_prompt_intro": "Du verkörperst eine Rolle innerhalb einer Multi-Agenten-Simulation.",
+  "fehler": {
+    "agent_nicht_gefunden": "Agent nicht gefunden.",
+    "simulation_nicht_gefunden": "Simulation nicht gefunden.",
+    "ungueltige_eingabe": "Die übermittelten Daten sind nicht gültig."
+  }
+}

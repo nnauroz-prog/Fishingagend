@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "Fishingagend",
+    "untertitel": "Multi-agent AI prediction engine"
+  },
+  "navigation": {
+    "startseite": "Home",
+    "agenten": "Agents",
+    "chat": "Chat",
+    "simulation": "Simulation",
+    "berichte": "Reports",
+    "thema_wechseln": "Toggle theme"
+  },
+  "startseite": {
+    "ueberschrift": "Welcome to Fishingagend",
+    "einleitung": "Create agents with distinct personalities, let them interact in a simulated world and observe how decisions ripple into the future.",
+    "los": "Get started"
+  },
+  "agenten": {
+    "titel": "Agents",
+    "neuer_agent": "Create new agent",
+    "leer": "No agents yet.",
+    "name": "Name",
+    "beruf": "Profession",
+    "hintergrund": "Background",
+    "werte": "Values (comma-separated)",
+    "speichern": "Save",
+    "abbrechen": "Cancel",
+    "loeschen": "Delete"
+  },
+  "chat": {
+    "titel": "Chat",
+    "platzhalter": "Type a message ...",
+    "senden": "Send",
+    "agent_waehlen": "Please select an agent first.",
+    "denkt": "Agent is thinking ..."
+  },
+  "simulation": {
+    "titel": "Simulation",
+    "neue": "Plan new simulation",
+    "starten": "Start",
+    "schritte": "Steps",
+    "agenten": "Agents",
+    "variable": "Variable (JSON)",
+    "dual_modus": "Dual mode (control vs. variant world)",
+    "status_geplant": "planned",
+    "status_laeuft": "running",
+    "status_abgeschlossen": "completed",
+    "status_fehlgeschlagen": "failed"
+  },
+  "berichte": {
+    "titel": "Reports",
+    "leer": "No reports yet. Start a simulation first.",
+    "anzeigen": "Show report"
+  },
+  "fehler": {
+    "allgemein": "An error occurred.",
+    "netzwerk": "Cannot reach the server."
+  }
+}

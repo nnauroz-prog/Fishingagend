@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node
+node_modules/
+.npm/
+*.log
+.parcel-cache/
+
+# Vite
+frontend/dist/
+frontend/.vite/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Umgebung
+.env
+.env.local
+.env.*.local
+
+# Datenbank
+*.sqlite
+*.sqlite3
+*.db
+data/
+
+# uv
+uv.lock

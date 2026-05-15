@@ -1,0 +1,9 @@
+{
+  "_hinweis": "Backend-side translations; the frontend has its own locales under frontend/src/i18n/.",
+  "system_prompt_intro": "You inhabit a role inside a multi-agent simulation.",
+  "fehler": {
+    "agent_nicht_gefunden": "Agent not found.",
+    "simulation_nicht_gefunden": "Simulation not found.",
+    "ungueltige_eingabe": "The submitted data is invalid."
+  }
+}

@@ -1,0 +1,63 @@
+"""Chat-Endpunkt — Gespräch mit einem simulierten Agenten."""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.dienste.agent_dienst import AgentDienst, hole_agent_dienst
+from app.dienste.gedaechtnis_dienst import GedaechtnisDienst, hole_gedaechtnis_dienst
+from app.dienste.llm_dienst import LLMDienst, hole_llm_dienst
+from app.modelle.chat import ChatAnfrage, ChatAntwort, Nachricht
+from app.modelle.persona import Persona
+
+router = APIRouter()
+
+
+def _system_prompt(persona: Persona, gedaechtnis: list[str]) -> str:
+    """Baut den Persona-Prompt — wird via Prompt-Caching beim LLM gespeichert."""
+    zeilen = [
+        f"Du verkörperst {persona.name}.",
+        f"Beruf: {persona.beruf or 'unbekannt'}.",
+        f"Hintergrund: {persona.hintergrund or 'keiner angegeben'}.",
+        f"Werte: {', '.join(persona.werte) or 'keine'}.",
+        f"Charakterzüge: {', '.join(persona.charakterzuege) or 'keine'}.",
+        f"Sprachstil: {persona.sprachstil}.",
+        "Antworte ausschließlich auf Deutsch und bleibe konsequent in dieser Rolle.",
+    ]
+    if gedaechtnis:
+        zeilen.append("\nLangzeit-Gedächtnis:")
+        zeilen.extend(f"- {eintrag}" for eintrag in gedaechtnis)
+    return "\n".join(zeilen)
+
+
+@router.post("", response_model=ChatAntwort)
+async def chatte(
+    anfrage: ChatAnfrage,
+    agenten: AgentDienst = Depends(hole_agent_dienst),
+    gedaechtnis: GedaechtnisDienst = Depends(hole_gedaechtnis_dienst),
+    llm: LLMDienst = Depends(hole_llm_dienst),
+) -> ChatAntwort:
+    agent = agenten.hole(anfrage.agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent nicht gefunden")
+
+    verlauf = [
+        {"role": "user" if n.rolle == "nutzer" else "assistant", "content": n.inhalt}
+        for n in anfrage.verlauf
+    ]
+    verlauf.append({"role": "user", "content": anfrage.nachricht})
+
+    system = _system_prompt(agent.persona, gedaechtnis.hole_kontext(agent.id))
+    antwort = await llm.antworte(system_prompt=system, verlauf=verlauf)
+
+    gedaechtnis.merke(agent.id, f"Nutzer: {anfrage.nachricht}")
+    gedaechtnis.merke(agent.id, f"Ich: {antwort.text}")
+
+    nachricht = Nachricht(rolle="agent", inhalt=antwort.text)
+    return ChatAntwort(
+        agent_id=agent.id,
+        antwort=antwort.text,
+        nachricht=nachricht,
+        eingangs_token=antwort.eingangs_token,
+        ausgangs_token=antwort.ausgangs_token,
+    )
