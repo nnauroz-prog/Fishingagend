@@ -78,6 +78,25 @@ class SimulationSchrittZeile(Basis):
     simulation: Mapped[SimulationZeile] = relationship(back_populates="schritt_zeilen")
 
 
+class EntitaetZeile(Basis):
+    __tablename__ = "entitaeten"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(200), index=True)
+    typ: Mapped[str] = mapped_column(String(40))
+    beschreibung: Mapped[str] = mapped_column(Text, default="")
+
+
+class BeziehungZeile(Basis):
+    __tablename__ = "beziehungen"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    von: Mapped[str] = mapped_column(String(200), index=True)
+    nach: Mapped[str] = mapped_column(String(200), index=True)
+    art: Mapped[str] = mapped_column(String(80))
+    gewicht: Mapped[float] = mapped_column(default=1.0)
+
+
 def _kodiere(wert: Any) -> str:
     return json.dumps(wert, ensure_ascii=False)
 

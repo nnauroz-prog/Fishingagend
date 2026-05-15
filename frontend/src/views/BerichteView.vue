@@ -33,6 +33,10 @@ async function anzeigen(id: string, name: string) {
     ladend.value = false;
   }
 }
+
+function drucken() {
+  window.print();
+}
 </script>
 
 <template>
@@ -60,9 +64,12 @@ async function anzeigen(id: string, name: string) {
         </li>
       </ul>
 
-      <article
-        class="karte prose prose-slate min-h-[24rem] max-w-none dark:prose-invert"
-      >
+      <article class="karte prose prose-slate min-h-[24rem] max-w-none dark:prose-invert">
+        <div v-if="aktuellerBericht" class="nicht-drucken mb-3 flex justify-end">
+          <button class="knopf-sekundaer text-xs" @click="drucken">
+            {{ t('berichte.drucken') }}
+          </button>
+        </div>
         <p v-if="ladend" class="text-sm text-slate-500">…</p>
         <p v-else-if="!aktuellerBericht" class="text-sm text-slate-500">
           {{ t('berichte.anzeigen') }} →

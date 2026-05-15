@@ -12,6 +12,30 @@
   }
 }
 
+@media print {
+  header,
+  footer,
+  nav,
+  .nicht-drucken {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .karte {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .prose {
+    max-width: none !important;
+  }
+  @page {
+    margin: 1.5cm;
+  }
+}
+
 @layer components {
   .knopf {
     @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2;

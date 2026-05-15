@@ -61,7 +61,8 @@
   "berichte": {
     "titel": "Reports",
     "leer": "No reports yet. Start a simulation first.",
-    "anzeigen": "Show report"
+    "anzeigen": "Show report",
+    "drucken": "Print / Save as PDF"
   },
   "graphrag": {
     "titel": "Knowledge graph",
@@ -72,7 +73,9 @@
     "text_platzhalter": "Raw text — e.g. a news article, a report, a protocol.",
     "abfragen": "Query knowledge graph",
     "frage_platzhalter": "What do you want to know?",
-    "fragen": "Ask"
+    "fragen": "Ask",
+    "graph": "Visualization",
+    "leeren": "Clear graph"
   },
   "nicht_gefunden": {
     "titel": "This page does not exist.",

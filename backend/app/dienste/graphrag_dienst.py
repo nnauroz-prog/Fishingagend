@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from sqlalchemy import select
+
+from app.datenbank import BeziehungZeile, EntitaetZeile, session_factory
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
 
 _SYSTEM_EXTRAKTION = """Du extrahierst Entitäten und Beziehungen aus Texten
@@ -89,10 +92,15 @@ def _zerlege(text: str, groesse: int = 1500) -> list[str]:
 
 class GraphRAGDienst:
     def __init__(self, llm: LLMSchnittstelle | None = None) -> None:
-        self._llm = llm or hole_llm_dienst()
+        self._fixierter_llm = llm
+
+    @property
+    def _llm(self) -> LLMSchnittstelle:
+        return self._fixierter_llm or hole_llm_dienst()
 
     async def extrahiere(self, texte: list[str]) -> WissensGraph:
-        graph = WissensGraph()
+        """Extrahiert aus Texten und persistiert dedupliziert in der DB."""
+        neu = WissensGraph()
         for text in texte:
             for chunk in _zerlege(text):
                 roh = await self._llm.antworte_json(
@@ -104,10 +112,33 @@ class GraphRAGDienst:
                     entitaeten=[Entitaet(**e) for e in roh.get("entitaeten", [])],
                     beziehungen=[Beziehung(**b) for b in roh.get("beziehungen", [])],
                 )
-                graph.fuege_hinzu(teil)
-        return graph
+                neu.fuege_hinzu(teil)
+        await self._persistiere(neu)
+        return await self.lade()
 
-    async def abfrage(self, graph: WissensGraph, frage: str) -> str:
+    async def lade(self) -> WissensGraph:
+        async with session_factory()() as session:
+            ents = (await session.execute(select(EntitaetZeile))).scalars().all()
+            bzs = (await session.execute(select(BeziehungZeile))).scalars().all()
+        return WissensGraph(
+            entitaeten=[Entitaet(name=e.name, typ=e.typ, beschreibung=e.beschreibung) for e in ents],
+            beziehungen=[
+                Beziehung(von=b.von, nach=b.nach, art=b.art, gewicht=b.gewicht) for b in bzs
+            ],
+        )
+
+    async def loesche_alles(self) -> None:
+        async with session_factory()() as session:
+            for ent in (await session.execute(select(EntitaetZeile))).scalars().all():
+                await session.delete(ent)
+            for bz in (await session.execute(select(BeziehungZeile))).scalars().all():
+                await session.delete(bz)
+            await session.commit()
+
+    async def abfrage(self, frage: str) -> str:
+        graph = await self.lade()
+        if not graph.entitaeten:
+            return "Der Wissensgraph ist noch leer. Bitte zuerst Texte extrahieren."
         anweisung = f"Wissensgraph:\n{graph.als_text()}\n\nFrage: {frage}"
         antwort = await self._llm.antworte(
             system_prompt=_SYSTEM_ABFRAGE,
@@ -116,3 +147,21 @@ class GraphRAGDienst:
             temperatur=0.3,
         )
         return antwort.text
+
+    async def _persistiere(self, neu: WissensGraph) -> None:
+        async with session_factory()() as session:
+            ents = (await session.execute(select(EntitaetZeile))).scalars().all()
+            bzs = (await session.execute(select(BeziehungZeile))).scalars().all()
+            ent_index = {(e.name, e.typ) for e in ents}
+            bz_index = {(b.von, b.nach, b.art) for b in bzs}
+            for e in neu.entitaeten:
+                if (e.name, e.typ) not in ent_index:
+                    session.add(EntitaetZeile(name=e.name, typ=e.typ, beschreibung=e.beschreibung))
+                    ent_index.add((e.name, e.typ))
+            for b in neu.beziehungen:
+                if (b.von, b.nach, b.art) not in bz_index:
+                    session.add(
+                        BeziehungZeile(von=b.von, nach=b.nach, art=b.art, gewicht=b.gewicht)
+                    )
+                    bz_index.add((b.von, b.nach, b.art))
+            await session.commit()

@@ -61,7 +61,8 @@
   "berichte": {
     "titel": "Berichte",
     "leer": "Noch keine Berichte. Starte zuerst eine Simulation.",
-    "anzeigen": "Bericht anzeigen"
+    "anzeigen": "Bericht anzeigen",
+    "drucken": "Drucken / Als PDF speichern"
   },
   "graphrag": {
     "titel": "Wissensgraph",
@@ -72,7 +73,9 @@
     "text_platzhalter": "Roher Text — z. B. ein Zeitungsartikel, ein Bericht, ein Protokoll.",
     "abfragen": "Wissensgraph befragen",
     "frage_platzhalter": "Was möchtest du wissen?",
-    "fragen": "Fragen"
+    "fragen": "Fragen",
+    "graph": "Visualisierung",
+    "leeren": "Graph leeren"
   },
   "nicht_gefunden": {
     "titel": "Diese Seite existiert nicht.",

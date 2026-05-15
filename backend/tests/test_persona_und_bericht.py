@@ -63,7 +63,7 @@ async def test_bericht_dienst_baut_anweisung_und_ruft_llm_auf() -> None:
     assert "Demo" in nutzer and "kontrolle" in nutzer
 
 
-async def test_graphrag_extrahiert_und_dedupliziert() -> None:
+async def test_graphrag_extrahiert_und_dedupliziert(isolierte_datenbank) -> None:
     antwort = json.dumps(
         {
             "entitaeten": [
@@ -76,12 +76,16 @@ async def test_graphrag_extrahiert_und_dedupliziert() -> None:
         }
     )
     mock = MockLLMDienst(antworten=[antwort, antwort])  # zweimal denselben Inhalt
-    graph = await GraphRAGDienst(llm=mock).extrahiere(
+    dienst = GraphRAGDienst(llm=mock)
+    graph = await dienst.extrahiere(
         ["Alice forscht an der ETH.", "Alice arbeitet an der ETH."]
     )
     # Deduplizierung: trotz zweier Texte nur 2 Entitäten und 1 Beziehung
     assert len(graph.entitaeten) == 2
     assert len(graph.beziehungen) == 1
+    # Der Graph wurde persistiert und laesst sich erneut laden
+    erneut = await dienst.lade()
+    assert len(erneut.entitaeten) == 2
 
 
 @pytest.mark.parametrize(
