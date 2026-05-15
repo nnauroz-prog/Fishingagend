@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 
 import type { FeedBeitrag, Folge } from '@/api/typen';
+import Avatar from '@/components/Avatar.vue';
 
 const props = defineProps<{
   feed: FeedBeitrag[];
@@ -37,9 +38,7 @@ const reaktionsIcon: Record<string, string> = {
     >
       <header class="mb-2 flex items-center justify-between text-xs text-slate-500">
         <div class="flex items-center gap-2">
-          <span class="grid h-7 w-7 place-items-center rounded-full bg-markenblau-100 text-xs font-semibold text-markenblau-700 dark:bg-slate-700 dark:text-slate-200">
-            {{ b.autor.charAt(0) }}
-          </span>
+          <Avatar :name="b.autor" groesse="klein" />
           <span class="font-semibold text-slate-900 dark:text-slate-100">{{ b.autor }}</span>
           <span>· Schritt {{ b.schritt_nr }}</span>
           <span

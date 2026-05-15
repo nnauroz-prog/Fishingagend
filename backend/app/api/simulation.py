@@ -138,6 +138,20 @@ async def hole(
     return sim
 
 
+@router.get("/{sim_id}/stimmung")
+async def stimmung(
+    sim_id: str,
+    dienst: SimulationDienst = Depends(hole_simulation_dienst),
+) -> dict:
+    """Sentiment-Verlauf je Welt — schnell, ohne LLM."""
+    from app.dienste.stimmung_dienst import stimmungs_verlauf
+
+    sim = await dienst.hole(sim_id)
+    if sim is None:
+        raise HTTPException(status_code=404, detail="Simulation nicht gefunden")
+    return stimmungs_verlauf(sim)
+
+
 @router.get("/{sim_id}/feed")
 async def feed(
     sim_id: str,

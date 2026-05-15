@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
 import type { Agent } from '@/api/typen';
+import Avatar from '@/components/Avatar.vue';
 
 defineProps<{ agent: Agent }>();
 defineEmits<{ loeschen: [string]; chatten: [string] }>();
@@ -13,9 +14,12 @@ const { t } = useI18n();
 <template>
   <article class="karte flex flex-col gap-2">
     <header class="flex items-start justify-between">
-      <div>
-        <h3 class="text-lg font-semibold">{{ agent.persona.name }}</h3>
-        <p v-if="agent.persona.beruf" class="text-sm text-slate-500">{{ agent.persona.beruf }}</p>
+      <div class="flex items-start gap-3">
+        <Avatar :name="agent.persona.name" groesse="gross" />
+        <div>
+          <h3 class="text-lg font-semibold">{{ agent.persona.name }}</h3>
+          <p v-if="agent.persona.beruf" class="text-sm text-slate-500">{{ agent.persona.beruf }}</p>
+        </div>
       </div>
       <span class="rounded-full bg-markenblau-50 px-2 py-0.5 text-xs text-markenblau-700 dark:bg-slate-700 dark:text-slate-200">
         {{ agent.id.slice(0, 6) }}

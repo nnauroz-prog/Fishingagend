@@ -7,6 +7,7 @@ import { simulationApi } from '@/api/simulation';
 import type { FeedBeitrag, Folge, Simulation, SimulationSchritt } from '@/api/typen';
 import { abonniereSimulation } from '@/api/websocket';
 import FeedAnzeige from '@/components/FeedAnzeige.vue';
+import StimmungsDiagramm from '@/components/StimmungsDiagramm.vue';
 import VergleichsAnsicht from '@/components/VergleichsAnsicht.vue';
 import { useToastStore } from '@/store/toasts';
 
@@ -16,9 +17,13 @@ const toasts = useToastStore();
 
 const sim = ref<Simulation | null>(null);
 const ladend = ref(true);
-const ansicht = ref<'spalten' | 'vergleich' | 'feed'>('spalten');
+const ansicht = ref<'spalten' | 'vergleich' | 'feed' | 'replay'>('spalten');
 const feed = ref<FeedBeitrag[]>([]);
 const folgen = ref<Folge[]>([]);
+const stimmung = ref<Record<string, { schritt: number; score: number }[]>>({});
+const replaySchritt = ref(1);
+const replaySpielt = ref(false);
+let replayTimer: ReturnType<typeof setInterval> | null = null;
 let abbrechen: (() => void) | null = null;
 
 const id = computed(() => route.params.id as string);
@@ -47,11 +52,54 @@ async function laden() {
       ]);
       ansicht.value = 'feed';
     }
+    if (sim.value?.status === 'abgeschlossen') {
+      stimmung.value = await simulationApi.stimmung(id.value);
+    }
   } catch {
     toasts.fehler('Simulation nicht gefunden.');
   } finally {
     ladend.value = false;
   }
+}
+
+const replaySchritte = computed(() => sim.value?.schritte ?? 0);
+const sichtbareSchritte = computed(() => {
+  if (!sim.value) return [];
+  if (ansicht.value !== 'replay') return sim.value.verlauf;
+  return sim.value.verlauf.filter((s) => s.nummer <= replaySchritt.value);
+});
+
+const stimmungsReihen = computed(() => {
+  const farben: Record<string, string> = {
+    kontrolle: '#64748b',
+    variante: '#2563eb',
+  };
+  return Object.entries(stimmung.value).map(([welt, daten]) => ({
+    name: welt,
+    farbe: farben[welt] ?? '#64748b',
+    daten,
+  }));
+});
+
+function replaySpielen() {
+  if (replaySpielt.value) {
+    replayPause();
+    return;
+  }
+  replaySpielt.value = true;
+  replayTimer = setInterval(() => {
+    if (replaySchritt.value >= replaySchritte.value) {
+      replayPause();
+      return;
+    }
+    replaySchritt.value++;
+  }, 800);
+}
+
+function replayPause() {
+  replaySpielt.value = false;
+  if (replayTimer) clearInterval(replayTimer);
+  replayTimer = null;
 }
 
 async function starte() {
@@ -172,7 +220,65 @@ onUnmounted(() => {
       >
         Feed
       </button>
+      <button
+        v-if="sim.status === 'abgeschlossen'"
+        class="knopf-sekundaer text-xs"
+        :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'replay' }"
+        @click="ansicht = 'replay'; replaySchritt = 1"
+      >
+        Replay
+      </button>
     </div>
+
+    <article v-if="ansicht === 'replay'" class="karte space-y-3">
+      <header class="flex items-center gap-3">
+        <button class="knopf-primaer text-xs" @click="replaySpielen">
+          {{ replaySpielt ? '⏸ Pause' : '▶ Play' }}
+        </button>
+        <span class="text-sm tabular-nums text-slate-500">
+          Schritt {{ replaySchritt }} / {{ replaySchritte }}
+        </span>
+        <input
+          v-model.number="replaySchritt"
+          type="range"
+          min="1"
+          :max="replaySchritte"
+          class="flex-1"
+          @input="replayPause"
+        />
+      </header>
+
+      <div class="grid gap-4" :class="sim.dual_modus ? 'lg:grid-cols-2' : ''">
+        <div
+          v-for="welt in (sim.dual_modus ? ['kontrolle', 'variante'] : ['kontrolle'])"
+          :key="welt"
+          class="rounded border-l-2 p-3"
+          :class="welt === 'kontrolle' ? 'border-slate-300 dark:border-slate-600' : 'border-markenblau-400'"
+        >
+          <h3
+            class="mb-2 text-xs font-semibold uppercase"
+            :class="welt === 'kontrolle' ? 'text-slate-500' : 'text-markenblau-700 dark:text-markenblau-500'"
+          >
+            {{ welt }}
+          </h3>
+          <ul class="space-y-1 text-sm">
+            <li
+              v-for="(e, i) in sichtbareSchritte
+                .filter((s) => s.welt === welt)
+                .flatMap((s) => s.ereignisse.map((eg) => `[${s.nummer}] ${eg}`))"
+              :key="i"
+            >
+              {{ e }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article v-if="sim.status === 'abgeschlossen' && stimmungsReihen.length" class="karte">
+      <h2 class="mb-2 text-sm font-semibold uppercase text-slate-500">Stimmungsverlauf</h2>
+      <StimmungsDiagramm :reihen="stimmungsReihen" />
+    </article>
 
     <article v-if="sim.plattform_modus && ansicht === 'feed'" class="space-y-4">
       <div v-if="sim.dual_modus" class="grid gap-4 lg:grid-cols-2">

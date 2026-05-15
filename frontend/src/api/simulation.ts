@@ -45,4 +45,10 @@ export const simulationApi = {
         sofort_starten,
       })
       .then((r) => r.data),
+  stimmung: (id: string) =>
+    apiClient
+      .get<Record<string, { schritt: number; score: number }[]>>(
+        `/api/simulation/${id}/stimmung`,
+      )
+      .then((r) => r.data),
 };
