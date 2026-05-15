@@ -16,6 +16,17 @@
     "audit": "Audit-Log",
     "thema_wechseln": "Thema wechseln"
   },
+  "auth": {
+    "anmelden": "Anmelden",
+    "registrieren": "Registrieren",
+    "abmelden": "Abmelden",
+    "einleitung": "Authentifizierung ist optional — siehe Einstellungen.",
+    "email": "E-Mail",
+    "passwort": "Passwort",
+    "anzeige_name": "Anzeige-Name",
+    "zur_registrierung": "Noch kein Konto? Jetzt registrieren →",
+    "zur_anmeldung": "← Schon ein Konto? Hier anmelden"
+  },
   "audit": {
     "titel": "Audit-Log",
     "einleitung": "Alle schreibenden Aktionen mit Zeitstempel und Details — chronologisch absteigend.",

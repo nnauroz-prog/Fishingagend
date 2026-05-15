@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
+
+import Avatar from '@/components/Avatar.vue';
+import { useAuthStore } from '@/store/auth';
 
 const { t, locale, availableLocales } = useI18n();
+const auth = useAuthStore();
+const router = useRouter();
+
+function abmelden() {
+  auth.abmelden();
+  router.push('/anmelden');
+}
 
 const dunkel = ref(document.documentElement.classList.contains('dark'));
 
@@ -64,6 +74,22 @@ const links = [
         >
           {{ dunkel ? '☀' : '☾' }}
         </button>
+
+        <template v-if="auth.angemeldet && auth.nutzer">
+          <div class="flex items-center gap-2 pl-2">
+            <Avatar :name="auth.nutzer.anzeige_name" groesse="klein" />
+            <button
+              class="text-xs text-slate-500 hover:text-red-600"
+              :title="t('auth.abmelden')"
+              @click="abmelden"
+            >
+              ↪
+            </button>
+          </div>
+        </template>
+        <RouterLink v-else to="/anmelden" class="knopf-primaer text-xs">
+          {{ t('auth.anmelden') }}
+        </RouterLink>
       </div>
     </div>
   </header>

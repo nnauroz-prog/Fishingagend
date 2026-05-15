@@ -161,6 +161,20 @@ class AuditZeile(Basis):
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class NutzerZeile(Basis):
+    """Anwendungsnutzer (opt-in via AUTH_AKTIV)."""
+
+    __tablename__ = "nutzer"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    passwort_hash: Mapped[str] = mapped_column(String(200))
+    anzeige_name: Mapped[str] = mapped_column(String(120))
+    rolle: Mapped[str] = mapped_column(String(20), default="nutzer")
+    aktiv: Mapped[bool] = mapped_column(default=True)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 def _kodiere(wert: Any) -> str:
     return json.dumps(wert, ensure_ascii=False)
 

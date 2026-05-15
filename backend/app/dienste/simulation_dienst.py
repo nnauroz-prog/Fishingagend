@@ -51,6 +51,10 @@ Antworte ausschließlich auf Deutsch."""
 class SimulationDienst:
     def __init__(self, llm: LLMSchnittstelle | None = None) -> None:
         self._llm = llm or hole_llm_dienst()
+        # Semaphore begrenzt parallele LLM-Calls — schuetzt das LLM-Konto
+        # vor Rate-Limits, wenn viele Agenten gleichzeitig denken.
+        from app.config import einstellungen as _e
+        self._llm_sem = asyncio.Semaphore(_e.max_parallele_llm_aufrufe)
 
     # -------- Lese-Operationen --------
     async def liste(self) -> list[Simulation]:
@@ -207,12 +211,13 @@ class SimulationDienst:
                     f"Bisherige Ereignisse:\n{kontext}\n\n"
                     "Beschreibe deine nächste Handlung in EINEM Satz."
                 )
-                antwort = await self._llm.antworte(
-                    system_prompt=sys_prompt,
-                    verlauf=[{"role": "user", "content": anweisung}],
-                    max_token=120,
-                    temperatur=0.8,
-                )
+                async with self._llm_sem:
+                    antwort = await self._llm.antworte(
+                        system_prompt=sys_prompt,
+                        verlauf=[{"role": "user", "content": anweisung}],
+                        max_token=120,
+                        temperatur=0.8,
+                    )
                 return f"{agent.persona.name}: {antwort.text.strip()}"
 
             ergebnisse = await asyncio.gather(*(_einzelaktion(a) for a in agenten))

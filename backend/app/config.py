@@ -59,6 +59,26 @@ class Einstellungen(BaseSettings):
         description="Wenn aktiv: Persona.werte/charakterzuege werden nach Sims dezent angepasst",
     )
 
+    # Auth (opt-in)
+    auth_aktiv: bool = Field(
+        default=False,
+        description="Wenn aktiv: schreibende Endpunkte erfordern JWT-Token",
+    )
+    jwt_geheimnis: str = Field(
+        default="bitte-aendern-in-production-sehr-langes-zufaelliges-geheimnis",
+        description="HS256-Signaturschlüssel — in Production zwingend setzen",
+    )
+    jwt_gueltigkeit_minuten: int = Field(default=60 * 24)
+    admin_email: str = Field(default="admin@fishingagend.de")
+    admin_passwort: str = Field(default="admin")
+
+    # Skalierung
+    max_parallele_llm_aufrufe: int = Field(
+        default=10,
+        ge=1,
+        description="Semaphore-Limit für parallele LLM-Calls in Sims",
+    )
+
     @property
     def cors_liste(self) -> list[str]:
         return [u.strip() for u in self.cors_urspruenge.split(",") if u.strip()]

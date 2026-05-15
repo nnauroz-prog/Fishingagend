@@ -8,10 +8,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agenten, audit, berichte, chat, graphrag, simulation, zustand
+from app.api import agenten, audit, auth, berichte, chat, graphrag, simulation, zustand
 from app.api import einstellungen as einstellungen_api
 from app.config import einstellungen
 from app.datenbank import initialisiere_datenbank
+from app.dienste.auth_dienst import sorge_fuer_admin
 from app.dienste.demo_dienst import saee_demo_daten
 from app.werkzeuge.logger import erstelle_logger
 
@@ -26,6 +27,7 @@ async def lebenszyklus(_app: FastAPI) -> AsyncIterator[None]:
         anzahl = await saee_demo_daten()
         if anzahl:
             logger.info("demo_daten_aktiv", neue_agenten=anzahl)
+    await sorge_fuer_admin()
     yield
     logger.info("beende_anwendung")
 
@@ -46,6 +48,7 @@ app.add_middleware(
 )
 
 app.include_router(zustand.router, prefix="/api", tags=["Zustand"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(agenten.router, prefix="/api/agenten", tags=["Agenten"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])

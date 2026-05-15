@@ -7,6 +7,23 @@ export const apiClient = axios.create({
   timeout: 30_000,
 });
 
+// Token aus localStorage automatisch im Authorization-Header senden
+apiClient.interceptors.request.use((config) => {
+  try {
+    const roh = localStorage.getItem('fishingagend-auth');
+    if (roh) {
+      const daten = JSON.parse(roh);
+      if (daten?.token) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${daten.token}`;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (fehler) => {

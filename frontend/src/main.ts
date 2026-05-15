@@ -13,4 +13,8 @@ app.use(createPinia());
 app.use(router);
 app.use(i18n);
 
+// Auth-Token aus localStorage laden, bevor die App startet
+import { useAuthStore } from '@/store/auth';
+useAuthStore().lade();
+
 app.mount('#app');

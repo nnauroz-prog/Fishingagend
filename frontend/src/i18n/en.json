@@ -16,6 +16,17 @@
     "audit": "Audit log",
     "thema_wechseln": "Toggle theme"
   },
+  "auth": {
+    "anmelden": "Sign in",
+    "registrieren": "Register",
+    "abmelden": "Sign out",
+    "einleitung": "Authentication is optional — see settings.",
+    "email": "Email",
+    "passwort": "Password",
+    "anzeige_name": "Display name",
+    "zur_registrierung": "No account? Register now →",
+    "zur_anmeldung": "← Already have an account? Sign in"
+  },
   "audit": {
     "titel": "Audit log",
     "einleitung": "All write actions with timestamp and details — newest first.",

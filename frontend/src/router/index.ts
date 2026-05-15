@@ -88,6 +88,12 @@ export const router = createRouter({
       meta: { titel: 'Audit-Log' },
     },
     {
+      path: '/anmelden',
+      name: 'anmelden',
+      component: () => import('@/views/AnmeldenView.vue'),
+      meta: { titel: 'Anmelden' },
+    },
+    {
       path: '/:pfad(.*)*',
       name: 'nicht-gefunden',
       component: () => import('@/views/NichtGefundenView.vue'),
