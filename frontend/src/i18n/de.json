@@ -5,12 +5,27 @@
   },
   "navigation": {
     "startseite": "Startseite",
+    "pipeline": "Pipeline",
     "agenten": "Agenten",
     "chat": "Chat",
     "simulation": "Simulation",
     "graphrag": "Wissensgraph",
     "berichte": "Berichte",
     "thema_wechseln": "Thema wechseln"
+  },
+  "pipeline": {
+    "titel": "Pipeline",
+    "einleitung": "Der vollständige Workflow von Saat-Daten bis tiefer Interaktion in fünf Phasen.",
+    "weiter": "Weiter →",
+    "starte": "Simulation starten",
+    "bericht_erstellen": "Bericht erstellen",
+    "bericht_chat": "Mit Bericht-Agent chatten",
+    "beispiel": "Beispieltext einfügen",
+    "phase1": "Füge rohen Text ein. Daraus extrahiert das LLM Personen, Orte, Konzepte und ihre Beziehungen.",
+    "phase2": "Aus den erkannten Personen werden ausformulierte Personas — sie werden direkt als Agenten angelegt.",
+    "phase3": "Plane eine Dual-Welt-Simulation. Die Variable beeinflusst nur die Variantenwelt.",
+    "phase4": "Der ReportAgent ruft selbständig Statistik- und Vergleichswerkzeuge auf und liefert einen Markdown-Bericht.",
+    "phase5": "Tiefe Interaktion: chatte mit den Agenten oder dem Bericht-Agent."
   },
   "startseite": {
     "ueberschrift": "Willkommen bei Fishingagend",
@@ -63,7 +78,10 @@
     "titel": "Berichte",
     "leer": "Noch keine Berichte. Starte zuerst eine Simulation.",
     "anzeigen": "Bericht anzeigen",
-    "drucken": "Drucken / Als PDF speichern"
+    "drucken": "Drucken / Als PDF speichern",
+    "chat_titel": "Mit Bericht-Agent sprechen",
+    "chat_einleitung": "Frage den Bericht-Agent — er nutzt Werkzeuge (Statistik, Suche, Welten-Vergleich), um konkrete Antworten zu liefern.",
+    "chat_platzhalter": "Was möchtest du wissen?"
   },
   "graphrag": {
     "titel": "Wissensgraph",

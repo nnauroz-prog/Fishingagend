@@ -56,11 +56,11 @@ async def test_bericht_dienst_baut_anweisung_und_ruft_llm_auf() -> None:
     )
     text = await BerichtDienst(llm=mock).erstelle_bericht(sim)
     assert text.startswith("# Zusammenfassung")
-    # System-Prompt fest, Anweisung enthält die Sim-Daten
+    # System-Prompt enthält die Analyst-Persona, Anweisung enthält den Sim-Namen
     system, verlauf = mock.aufrufe[0]
-    assert "Multi-Agenten-Simulationen" in system
+    assert "Analyst" in system
     nutzer = verlauf[-1]["content"]
-    assert "Demo" in nutzer and "kontrolle" in nutzer
+    assert "Demo" in nutzer
 
 
 async def test_graphrag_extrahiert_und_dedupliziert(isolierte_datenbank) -> None:

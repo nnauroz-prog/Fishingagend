@@ -11,4 +11,14 @@ export const agentenApi = {
     apiClient.put<Agent>(`/api/agenten/${id}`, persona).then((r) => r.data),
   personaAusSaat: (saat: Record<string, string>) =>
     apiClient.post<Persona>('/api/agenten/aus-saat', { saat }).then((r) => r.data),
+  ausGraph: (max_personen = 8, sofort_anlegen = true) =>
+    apiClient
+      .post<Agent[]>('/api/agenten/aus-graph', { max_personen, sofort_anlegen })
+      .then((r) => r.data),
+  merke: (id: string, inhalt: string) =>
+    apiClient.post<{ status: string }>(`/api/agenten/${id}/gedaechtnis`, { inhalt }).then((r) => r.data),
+  leseGedaechtnis: (id: string, grenze = 50) =>
+    apiClient
+      .get<string[]>(`/api/agenten/${id}/gedaechtnis`, { params: { grenze } })
+      .then((r) => r.data),
 };

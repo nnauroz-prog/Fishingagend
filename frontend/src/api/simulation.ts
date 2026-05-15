@@ -12,4 +12,8 @@ export const simulationApi = {
       .then((r) => r.data),
   bericht: (id: string) =>
     apiClient.get<{ simulation_id: string; markdown: string }>(`/api/berichte/${id}`).then((r) => r.data),
+  berichtChat: (id: string, nachricht: string, verlauf: { rolle: string; inhalt: string; zeitstempel: string }[]) =>
+    apiClient
+      .post<{ antwort: string }>(`/api/berichte/${id}/chat`, { nachricht, verlauf })
+      .then((r) => r.data),
 };

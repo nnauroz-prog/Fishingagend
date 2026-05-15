@@ -52,6 +52,12 @@ export const router = createRouter({
       meta: { titel: 'Berichte' },
     },
     {
+      path: '/pipeline',
+      name: 'pipeline',
+      component: () => import('@/views/PipelineView.vue'),
+      meta: { titel: 'Pipeline' },
+    },
+    {
       path: '/:pfad(.*)*',
       name: 'nicht-gefunden',
       component: () => import('@/views/NichtGefundenView.vue'),

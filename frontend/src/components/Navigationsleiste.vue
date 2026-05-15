@@ -21,6 +21,7 @@ function spracheWechseln() {
 
 const links = [
   { ziel: '/', schluessel: 'navigation.startseite' },
+  { ziel: '/pipeline', schluessel: 'navigation.pipeline' },
   { ziel: '/agenten', schluessel: 'navigation.agenten' },
   { ziel: '/chat', schluessel: 'navigation.chat' },
   { ziel: '/simulation', schluessel: 'navigation.simulation' },

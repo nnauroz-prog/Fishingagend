@@ -5,12 +5,27 @@
   },
   "navigation": {
     "startseite": "Home",
+    "pipeline": "Pipeline",
     "agenten": "Agents",
     "chat": "Chat",
     "simulation": "Simulation",
     "graphrag": "Knowledge graph",
     "berichte": "Reports",
     "thema_wechseln": "Toggle theme"
+  },
+  "pipeline": {
+    "titel": "Pipeline",
+    "einleitung": "The full workflow from seed data to deep interaction — in five phases.",
+    "weiter": "Next →",
+    "starte": "Run simulation",
+    "bericht_erstellen": "Generate report",
+    "bericht_chat": "Chat with report agent",
+    "beispiel": "Insert sample text",
+    "phase1": "Paste raw text. The LLM extracts people, places, concepts and their relationships.",
+    "phase2": "Detected persons are turned into full personas and registered as agents.",
+    "phase3": "Plan a dual-world simulation. The variable only affects the variant world.",
+    "phase4": "The ReportAgent autonomously invokes statistics and comparison tools and produces a Markdown report.",
+    "phase5": "Deep interaction: chat with the agents or with the report agent."
   },
   "startseite": {
     "ueberschrift": "Welcome to Fishingagend",
@@ -63,7 +78,10 @@
     "titel": "Reports",
     "leer": "No reports yet. Start a simulation first.",
     "anzeigen": "Show report",
-    "drucken": "Print / Save as PDF"
+    "drucken": "Print / Save as PDF",
+    "chat_titel": "Chat with the report agent",
+    "chat_einleitung": "Ask the report agent — it uses tools (statistics, search, world comparison) to deliver concrete answers.",
+    "chat_platzhalter": "What do you want to know?"
   },
   "graphrag": {
     "titel": "Knowledge graph",

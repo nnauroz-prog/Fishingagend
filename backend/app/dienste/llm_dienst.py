@@ -24,6 +24,25 @@ class LLMAntwort:
     ausgangs_token: int = 0
 
 
+@dataclass
+class WerkzeugAufruf:
+    """Ein Werkzeug-Aufruf, den das Modell ausführen lassen will."""
+
+    name: str
+    eingabe: dict[str, Any]
+    aufruf_id: str = ""
+
+
+@dataclass
+class WerkzeugErgebnis:
+    """Endergebnis einer Tool-Use-Schleife."""
+
+    text: str
+    aufrufe: list[WerkzeugAufruf]
+    eingangs_token: int = 0
+    ausgangs_token: int = 0
+
+
 class LLMSchnittstelle(Protocol):
     """Damit Tests einen Mock einsetzen können."""
 
@@ -42,6 +61,15 @@ class LLMSchnittstelle(Protocol):
         max_token: int = ...,
         temperatur: float = ...,
     ) -> AsyncIterator[str]: ...
+
+    async def mit_werkzeugen(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, Any]],
+        werkzeuge: list[dict[str, Any]],
+        max_runden: int = ...,
+        werkzeug_aufruf: Any = ...,
+    ) -> WerkzeugErgebnis: ...
 
 
 class LLMDienst:
@@ -129,6 +157,69 @@ class LLMDienst:
             async for text in strom.text_stream:
                 yield text
 
+    async def mit_werkzeugen(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, Any]],
+        werkzeuge: list[dict[str, Any]],
+        max_runden: int = 6,
+        werkzeug_aufruf: Any = None,
+    ) -> WerkzeugErgebnis:
+        """Tool-Use-Schleife: LLM darf Werkzeuge aufrufen, bis es einen Text liefert.
+
+        ``werkzeug_aufruf`` ist eine async Funktion ``(name, eingabe) -> str``,
+        die das jeweilige Werkzeug ausfuehrt.
+        """
+        nachrichten = list(verlauf)
+        gesamt_eingang = 0
+        gesamt_ausgang = 0
+        protokoll: list[WerkzeugAufruf] = []
+        for _ in range(max_runden):
+            antwort = await self._client.messages.create(
+                model=self._modell,
+                max_tokens=2048,
+                system=system_prompt,
+                tools=werkzeuge,  # type: ignore[arg-type]
+                messages=nachrichten,  # type: ignore[arg-type]
+            )
+            gesamt_eingang += antwort.usage.input_tokens
+            gesamt_ausgang += antwort.usage.output_tokens
+            tool_uses = [b for b in antwort.content if b.type == "tool_use"]
+            if not tool_uses:
+                text = "".join(b.text for b in antwort.content if b.type == "text")
+                return WerkzeugErgebnis(
+                    text=text,
+                    aufrufe=protokoll,
+                    eingangs_token=gesamt_eingang,
+                    ausgangs_token=gesamt_ausgang,
+                )
+
+            nachrichten.append({"role": "assistant", "content": antwort.content})
+            ergebnisse: list[dict[str, Any]] = []
+            for tu in tool_uses:
+                aufruf = WerkzeugAufruf(name=tu.name, eingabe=dict(tu.input), aufruf_id=tu.id)
+                protokoll.append(aufruf)
+                ausgabe = (
+                    await werkzeug_aufruf(aufruf.name, aufruf.eingabe)
+                    if werkzeug_aufruf
+                    else "Kein Werkzeug-Handler registriert."
+                )
+                ergebnisse.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tu.id,
+                        "content": ausgabe,
+                    }
+                )
+            nachrichten.append({"role": "user", "content": ergebnisse})
+
+        return WerkzeugErgebnis(
+            text="(Maximale Werkzeug-Runden erreicht ohne Antwort.)",
+            aufrufe=protokoll,
+            eingangs_token=gesamt_eingang,
+            ausgangs_token=gesamt_ausgang,
+        )
+
 
 class MockLLMDienst:
     """Liefert deterministische Antworten — für Tests ohne API-Key."""
@@ -177,6 +268,30 @@ class MockLLMDienst:
         for wort in antwort.text.split(" "):
             await asyncio.sleep(0)
             yield wort + " "
+
+    async def mit_werkzeugen(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, Any]],
+        werkzeuge: list[dict[str, Any]],
+        max_runden: int = 6,
+        werkzeug_aufruf: Any = None,
+    ) -> WerkzeugErgebnis:
+        """Mock: ruft (falls vorhanden) jedes Werkzeug genau einmal mit leerer
+        Eingabe auf, dann gibt es eine deterministische Textantwort zurueck."""
+        protokoll: list[WerkzeugAufruf] = []
+        for w in werkzeuge[:max_runden]:
+            aufruf = WerkzeugAufruf(name=w["name"], eingabe={}, aufruf_id=f"mock-{w['name']}")
+            protokoll.append(aufruf)
+            if werkzeug_aufruf:
+                await werkzeug_aufruf(aufruf.name, aufruf.eingabe)
+        antwort = await self.antworte(system_prompt, verlauf)
+        return WerkzeugErgebnis(
+            text=antwort.text,
+            aufrufe=protokoll,
+            eingangs_token=antwort.eingangs_token,
+            ausgangs_token=antwort.ausgangs_token,
+        )
 
 
 def _parse_json(text: str) -> dict[str, Any]:
