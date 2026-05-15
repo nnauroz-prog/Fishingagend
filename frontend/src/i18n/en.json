@@ -108,6 +108,14 @@
     "graph": "Visualization",
     "leeren": "Clear graph"
   },
+  "agent_detail": {
+    "beziehungen": "Learned relationships",
+    "reflexionen": "Reflections from simulations",
+    "praeferenzen": "What he/she thinks about",
+    "personen": "Important people",
+    "begriffe": "Frequent terms",
+    "episoden": "memory episodes"
+  },
   "nicht_gefunden": {
     "titel": "This page does not exist.",
     "text": "The requested URL could not be matched."

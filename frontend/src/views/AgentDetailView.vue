@@ -17,6 +17,12 @@ const toasts = useToastStore();
 const agent = ref<Agent | null>(null);
 const ladend = ref(false);
 const bearbeiten = ref(false);
+const reflexionen = ref<string[]>([]);
+const praeferenzen = ref<{
+  personen: { name: string; anzahl: number }[];
+  begriffe: { wort: string; anzahl: number }[];
+  episoden: number;
+} | null>(null);
 const formular = reactive({
   name: '',
   beruf: '',
@@ -32,6 +38,10 @@ onMounted(async () => {
   ladend.value = true;
   try {
     agent.value = await agentenApi.hole(id.value);
+    [reflexionen.value, praeferenzen.value] = await Promise.all([
+      agentenApi.reflexionen(id.value),
+      agentenApi.praeferenzen(id.value),
+    ]);
   } catch {
     toasts.fehler('Agent nicht gefunden.');
     router.replace({ name: 'agenten' });
@@ -39,6 +49,18 @@ onMounted(async () => {
     ladend.value = false;
   }
 });
+
+const beziehungenListe = computed(() =>
+  agent.value
+    ? Object.entries(agent.value.persona.beziehungen).map(([name, text]) => ({ name, text }))
+    : [],
+);
+
+function tagGroesse(anzahl: number, max: number): string {
+  // Tag-Cloud-Skalierung 0.75 - 1.5em
+  const f = Math.min(1, anzahl / Math.max(max, 1));
+  return `${(0.75 + f * 0.75).toFixed(2)}em`;
+}
 
 function bearbeitenStarten() {
   if (!agent.value) return;
@@ -167,6 +189,74 @@ async function loeschen() {
           </li>
         </ul>
         <p v-else class="text-sm text-slate-500">—</p>
+      </article>
+
+      <article v-if="beziehungenListe.length" class="karte">
+        <h2 class="mb-2 text-sm font-semibold uppercase text-slate-500">
+          {{ t('agent_detail.beziehungen') }}
+        </h2>
+        <ul class="space-y-1.5 text-sm">
+          <li
+            v-for="b in beziehungenListe"
+            :key="b.name"
+            class="flex items-baseline gap-2"
+          >
+            <strong class="shrink-0">{{ b.name }}:</strong>
+            <span class="text-slate-600 dark:text-slate-300">{{ b.text }}</span>
+          </li>
+        </ul>
+      </article>
+
+      <article v-if="reflexionen.length" class="karte">
+        <h2 class="mb-2 text-sm font-semibold uppercase text-slate-500">
+          {{ t('agent_detail.reflexionen') }}
+        </h2>
+        <ul class="space-y-2 text-sm">
+          <li
+            v-for="(r, i) in reflexionen.slice(0, 5)"
+            :key="i"
+            class="rounded border-l-2 border-markenblau-400 bg-slate-50 px-3 py-2 dark:bg-slate-700"
+          >
+            {{ r.replace(/^\[Reflexion zu Sim [^\]]+\]\s*/, '') }}
+          </li>
+        </ul>
+      </article>
+
+      <article v-if="praeferenzen && praeferenzen.episoden > 0" class="karte md:col-span-2">
+        <h2 class="mb-2 text-sm font-semibold uppercase text-slate-500">
+          {{ t('agent_detail.praeferenzen') }}
+          <span class="ml-2 text-xs font-normal normal-case text-slate-400">
+            ({{ praeferenzen.episoden }} {{ t('agent_detail.episoden') }})
+          </span>
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div v-if="praeferenzen.personen.length">
+            <h3 class="mb-1 text-xs uppercase text-slate-400">{{ t('agent_detail.personen') }}</h3>
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span
+                v-for="p in praeferenzen.personen"
+                :key="p.name"
+                class="rounded bg-markenblau-50 px-2 py-0.5 text-markenblau-700 dark:bg-slate-700 dark:text-markenblau-300"
+                :style="{ fontSize: tagGroesse(p.anzahl, praeferenzen.personen[0]?.anzahl ?? 1) }"
+              >
+                {{ p.name }} <sup class="text-[0.7em] opacity-60">{{ p.anzahl }}</sup>
+              </span>
+            </div>
+          </div>
+          <div v-if="praeferenzen.begriffe.length">
+            <h3 class="mb-1 text-xs uppercase text-slate-400">{{ t('agent_detail.begriffe') }}</h3>
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span
+                v-for="b in praeferenzen.begriffe"
+                :key="b.wort"
+                class="rounded bg-slate-100 px-2 py-0.5 dark:bg-slate-700"
+                :style="{ fontSize: tagGroesse(b.anzahl, praeferenzen.begriffe[0]?.anzahl ?? 1) }"
+              >
+                {{ b.wort }}
+              </span>
+            </div>
+          </div>
+        </div>
       </article>
 
       <article class="karte">

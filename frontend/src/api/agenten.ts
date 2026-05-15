@@ -21,4 +21,14 @@ export const agentenApi = {
     apiClient
       .get<string[]>(`/api/agenten/${id}/gedaechtnis`, { params: { grenze } })
       .then((r) => r.data),
+  reflexionen: (id: string) =>
+    apiClient.get<string[]>(`/api/agenten/${id}/reflexionen`).then((r) => r.data),
+  praeferenzen: (id: string) =>
+    apiClient
+      .get<{
+        personen: { name: string; anzahl: number }[];
+        begriffe: { wort: string; anzahl: number }[];
+        episoden: number;
+      }>(`/api/agenten/${id}/praeferenzen`)
+      .then((r) => r.data),
 };

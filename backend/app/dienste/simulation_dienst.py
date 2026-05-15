@@ -19,6 +19,7 @@ from app.datenbank import (
 )
 from app.dienste.ereignis_bus import hole_ereignis_bus
 from app.dienste.gedaechtnis_dienst import hole_gedaechtnis_dienst
+from app.dienste.lern_dienst import hole_lern_dienst
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
 from app.dienste.plattform_dienst import hole_plattform_dienst
 from app.modelle.agent import Agent
@@ -113,7 +114,18 @@ class SimulationDienst:
             await self._setze_status(sim_id, SimulationStatus.FEHLGESCHLAGEN)
             raise
 
-        return await self.hole(sim_id)
+        # Lern-Phase nach Abschluss: Reflexionen, Beziehungen, Konsolidierung
+        fertige = await self.hole(sim_id)
+        if fertige and fertige.status == SimulationStatus.ABGESCHLOSSEN:
+            try:
+                ergebnis = await hole_lern_dienst().lerne_aus_sim(fertige)
+                await hole_ereignis_bus().veroeffentliche(
+                    f"sim:{sim_id}", {"typ": "lernen", **ergebnis}
+                )
+            except Exception:
+                logger.exception("lernen_fehlgeschlagen", sim_id=sim_id)
+
+        return fertige
 
     # -------- Hilfen --------
     async def _setze_status(self, sim_id: str, status: SimulationStatus) -> None:

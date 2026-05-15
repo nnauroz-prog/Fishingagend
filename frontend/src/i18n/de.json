@@ -108,6 +108,14 @@
     "graph": "Visualisierung",
     "leeren": "Graph leeren"
   },
+  "agent_detail": {
+    "beziehungen": "Gelernte Beziehungen",
+    "reflexionen": "Reflexionen aus Simulationen",
+    "praeferenzen": "Worüber er/sie nachdenkt",
+    "personen": "Wichtige Personen",
+    "begriffe": "Häufige Begriffe",
+    "episoden": "Episoden im Gedächtnis"
+  },
   "nicht_gefunden": {
     "titel": "Diese Seite existiert nicht.",
     "text": "Die angeforderte URL konnte nicht zugeordnet werden."

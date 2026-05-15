@@ -97,6 +97,34 @@ async def lese_gedaechtnis(
     return await hole_gedaechtnis_dienst().hole_kontext(agent_id, grenze)
 
 
+@router.get("/{agent_id}/reflexionen", response_model=list[str])
+async def lese_reflexionen(
+    agent_id: str,
+    agenten: AgentDienst = Depends(hole_agent_dienst),
+) -> list[str]:
+    """Filtert das Gedaechtnis nach [Reflexion]-Eintraegen — die Selbst-
+    Beobachtungen, die der Agent nach Sims geschrieben hat."""
+    if not await agenten.hole(agent_id):
+        raise HTTPException(status_code=404, detail="Agent nicht gefunden")
+    from app.dienste.gedaechtnis_dienst import hole_gedaechtnis_dienst
+
+    eintraege = await hole_gedaechtnis_dienst().hole_kontext(agent_id, 10000)
+    return [e for e in eintraege if "[Reflexion" in e]
+
+
+@router.get("/{agent_id}/praeferenzen")
+async def lese_praeferenzen(
+    agent_id: str,
+    agenten: AgentDienst = Depends(hole_agent_dienst),
+) -> dict:
+    """Top-Begriffe und Top-Personen aus dem Gedaechtnis (kein LLM)."""
+    if not await agenten.hole(agent_id):
+        raise HTTPException(status_code=404, detail="Agent nicht gefunden")
+    from app.dienste.lern_dienst import berechne_praeferenzen
+
+    return await berechne_praeferenzen(agent_id)
+
+
 @router.get("/{agent_id}", response_model=Agent)
 async def hole_agent(agent_id: str, dienst: AgentDienst = Depends(hole_agent_dienst)) -> Agent:
     agent = await dienst.hole(agent_id)
