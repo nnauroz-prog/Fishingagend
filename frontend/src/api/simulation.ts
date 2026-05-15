@@ -29,4 +29,8 @@ export const simulationApi = {
     apiClient
       .get<Folge[]>(`/api/simulation/${id}/folgen`, { params: welt ? { welt } : {} })
       .then((r) => r.data),
+  ausText: (beschreibung: string) =>
+    apiClient
+      .post<SimulationErstellen>('/api/simulation/aus-text', { beschreibung })
+      .then((r) => r.data),
 };

@@ -11,7 +11,15 @@
     "simulation": "Simulation",
     "graphrag": "Knowledge graph",
     "berichte": "Reports",
+    "einstellungen": "Settings",
     "thema_wechseln": "Toggle theme"
+  },
+  "einstellungen": {
+    "titel": "Settings",
+    "einleitung": "Current application configuration — set via environment variables.",
+    "gesetzt": "✓ set",
+    "fehlt": "✗ missing",
+    "hinweis_env": "Provider and API keys are set via the env vars LLM_PROVIDER, ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENAI_BASIS_URL."
   },
   "pipeline": {
     "titel": "Pipeline",
@@ -65,6 +73,9 @@
     "vergleich": "Comparison view",
     "suchen": "Filter simulations ...",
     "alle_status": "All statuses",
+    "aus_text_titel": "Generate from natural-language brief",
+    "aus_text_platzhalter": "e.g. \"climate discussion with scientist and mayor, 5 steps\"",
+    "aus_text_knopf": "Suggest",
     "schritte": "Steps",
     "agenten": "Agents",
     "variable": "Variable (JSON)",

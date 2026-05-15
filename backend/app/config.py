@@ -18,9 +18,23 @@ class Einstellungen(BaseSettings):
         extra="ignore",
     )
 
-    # LLM
+    # LLM — Provider-Auswahl
+    llm_provider: str = Field(
+        default="anthropic",
+        description="anthropic | openai (auch Qwen, lokale OpenAI-kompatible Endpunkte)",
+    )
+
+    # Anthropic
     anthropic_api_key: str = Field(default="", description="API-Schlüssel für Anthropic")
     anthropic_modell: str = Field(default="claude-opus-4-7")
+
+    # OpenAI-kompatibel (OpenAI, Alibaba Qwen via Bailian, Ollama, etc.)
+    openai_api_key: str = Field(default="")
+    openai_basis_url: str = Field(
+        default="",
+        description="z. B. https://dashscope.aliyuncs.com/compatible-mode/v1 für Qwen",
+    )
+    openai_modell: str = Field(default="qwen-plus")
 
     # Backend
     backend_host: str = "0.0.0.0"

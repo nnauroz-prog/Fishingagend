@@ -27,6 +27,7 @@ const links = [
   { ziel: '/simulation', schluessel: 'navigation.simulation' },
   { ziel: '/graphrag', schluessel: 'navigation.graphrag' },
   { ziel: '/berichte', schluessel: 'navigation.berichte' },
+  { ziel: '/einstellungen', schluessel: 'navigation.einstellungen' },
 ];
 </script>
 

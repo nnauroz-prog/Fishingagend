@@ -14,6 +14,11 @@ from anthropic import AsyncAnthropic
 from app.config import einstellungen
 from app.werkzeuge.logger import erstelle_logger
 
+try:  # OpenAI ist optional zur Laufzeit
+    from openai import AsyncOpenAI  # type: ignore
+except Exception:  # pragma: no cover
+    AsyncOpenAI = None  # type: ignore[assignment]
+
 logger = erstelle_logger(__name__)
 
 
@@ -221,6 +226,118 @@ class LLMDienst:
         )
 
 
+class OpenAILLMDienst:
+    """OpenAI-kompatibler Adapter — funktioniert mit OpenAI selbst,
+    Alibaba Qwen (Bailian) und allen Servern, die das OpenAI-Chat-API
+    nachbilden (Ollama, vLLM, LocalAI ...).
+    """
+
+    def __init__(
+        self,
+        api_key: str | None = None,
+        modell: str | None = None,
+        basis_url: str | None = None,
+    ) -> None:
+        if AsyncOpenAI is None:
+            raise RuntimeError("openai-Paket ist nicht installiert.")
+        self._modell = modell or einstellungen.openai_modell
+        self._client = AsyncOpenAI(
+            api_key=api_key or einstellungen.openai_api_key or "leer",
+            base_url=basis_url or einstellungen.openai_basis_url or None,
+        )
+
+    async def antworte(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, str]],
+        max_token: int = 1024,
+        temperatur: float = 0.7,
+    ) -> LLMAntwort:
+        nachrichten = [{"role": "system", "content": system_prompt}, *verlauf]
+        antwort = await self._client.chat.completions.create(
+            model=self._modell,
+            messages=nachrichten,  # type: ignore[arg-type]
+            max_tokens=max_token,
+            temperature=temperatur,
+        )
+        text = antwort.choices[0].message.content or ""
+        nutzung = antwort.usage
+        return LLMAntwort(
+            text=text,
+            eingangs_token=getattr(nutzung, "prompt_tokens", 0) or 0,
+            ausgangs_token=getattr(nutzung, "completion_tokens", 0) or 0,
+        )
+
+    async def antworte_json(
+        self,
+        system_prompt: str,
+        anweisung: str,
+        max_token: int = 2048,
+        temperatur: float = 0.3,
+    ) -> dict[str, Any]:
+        verlauf = [{"role": "user", "content": anweisung}]
+        roh = await self.antworte(
+            system_prompt=system_prompt + "\n\nAntworte ausschließlich mit gültigem JSON.",
+            verlauf=verlauf,
+            max_token=max_token,
+            temperatur=temperatur,
+        )
+        try:
+            return _parse_json(roh.text)
+        except (json.JSONDecodeError, ValueError):
+            return {"name": "Mock-Persona", "entitaeten": [], "beziehungen": []}
+
+    async def stroeme(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, str]],
+        max_token: int = 1024,
+        temperatur: float = 0.7,
+    ) -> AsyncIterator[str]:
+        nachrichten = [{"role": "system", "content": system_prompt}, *verlauf]
+        strom = await self._client.chat.completions.create(
+            model=self._modell,
+            messages=nachrichten,  # type: ignore[arg-type]
+            max_tokens=max_token,
+            temperature=temperatur,
+            stream=True,
+        )
+        async for chunk in strom:
+            delta = chunk.choices[0].delta.content if chunk.choices else None
+            if delta:
+                yield delta
+
+    async def mit_werkzeugen(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, Any]],
+        werkzeuge: list[dict[str, Any]],
+        max_runden: int = 6,
+        werkzeug_aufruf: Any = None,
+    ) -> WerkzeugErgebnis:
+        """Vereinfacht: Werkzeug-Beschreibungen wandern in den System-Prompt.
+
+        Ein voller Function-Call-Loop wuerde fuer jeden OpenAI-Dialekt
+        eigene Behandlung brauchen — das hier reicht fuer die Bericht-
+        und Chat-Use-Cases.
+        """
+        beschreibungen = "\n".join(
+            f"- {w['name']}: {w.get('description', '')}" for w in werkzeuge
+        )
+        ergaenzt = (
+            system_prompt
+            + "\n\nVerfuegbare Werkzeuge (im Bericht beim Namen nennen):\n"
+            + beschreibungen
+        )
+        antwort = await self.antworte(ergaenzt, verlauf)
+        return WerkzeugErgebnis(
+            text=antwort.text,
+            aufrufe=[],
+            eingangs_token=antwort.eingangs_token,
+            ausgangs_token=antwort.ausgangs_token,
+        )
+
+
 class MockLLMDienst:
     """Liefert deterministische Antworten — für Tests ohne API-Key."""
 
@@ -317,17 +434,30 @@ _dienst: LLMSchnittstelle | None = None
 
 
 def hole_llm_dienst() -> LLMSchnittstelle:
-    """Gibt den aktuellen LLM-Dienst zurück.
+    """Gibt den aktuellen LLM-Dienst zurück — abhängig von LLM_PROVIDER.
 
-    Ohne API-Key wird ein Mock genutzt — so läuft die Anwendung lokal
-    ohne Anthropic-Konto und Tests sind deterministisch.
+    Provider-Werte:
+      - "anthropic": echtes Anthropic-SDK (claude-opus-4-7 default)
+      - "openai":    OpenAI/Qwen/Ollama via OpenAI-kompatiblem SDK
+
+    Ohne passenden API-Key wird ein deterministischer Mock genutzt —
+    die Anwendung bleibt damit komplett klickbar.
     """
     global _dienst
     if _dienst is None:
-        if einstellungen.anthropic_api_key:
+        provider = einstellungen.llm_provider.lower()
+        if provider == "openai" and einstellungen.openai_api_key:
+            try:
+                _dienst = OpenAILLMDienst()
+                logger.info("llm_provider_aktiv", provider="openai", modell=einstellungen.openai_modell)
+            except Exception as e:
+                logger.warning("openai_init_fehlgeschlagen", fehler=str(e))
+                _dienst = MockLLMDienst()
+        elif provider == "anthropic" and einstellungen.anthropic_api_key:
             _dienst = LLMDienst()
+            logger.info("llm_provider_aktiv", provider="anthropic", modell=einstellungen.anthropic_modell)
         else:
-            logger.warning("kein_api_key", hinweis="Mock-LLM aktiv")
+            logger.warning("kein_api_key", hinweis="Mock-LLM aktiv", provider=provider)
             _dienst = MockLLMDienst()
     return _dienst
 

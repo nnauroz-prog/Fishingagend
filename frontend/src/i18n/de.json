@@ -11,7 +11,15 @@
     "simulation": "Simulation",
     "graphrag": "Wissensgraph",
     "berichte": "Berichte",
+    "einstellungen": "Einstellungen",
     "thema_wechseln": "Thema wechseln"
+  },
+  "einstellungen": {
+    "titel": "Einstellungen",
+    "einleitung": "Aktuelle Konfiguration der Anwendung — gesetzt über Umgebungsvariablen.",
+    "gesetzt": "✓ gesetzt",
+    "fehlt": "✗ fehlt",
+    "hinweis_env": "Provider und API-Keys werden über die Umgebungsvariablen LLM_PROVIDER, ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENAI_BASIS_URL gesetzt."
   },
   "pipeline": {
     "titel": "Pipeline",
@@ -65,6 +73,9 @@
     "vergleich": "Vergleichsansicht",
     "suchen": "Simulationen filtern ...",
     "alle_status": "Alle Status",
+    "aus_text_titel": "Aus natürlicher Anforderung erzeugen",
+    "aus_text_platzhalter": "z. B. „Diskussion zur CO2-Reduktion mit Wissenschaftlerin und Bürgermeister, 5 Schritte“",
+    "aus_text_knopf": "Vorschlag",
     "schritte": "Schritte",
     "agenten": "Agenten",
     "variable": "Variable (JSON)",

@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import agenten, berichte, chat, graphrag, simulation, zustand
+from app.api import einstellungen as einstellungen_api
 from app.config import einstellungen
 from app.datenbank import initialisiere_datenbank
 from app.dienste.demo_dienst import saee_demo_daten
@@ -50,6 +51,7 @@ app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(simulation.router, prefix="/api/simulation", tags=["Simulation"])
 app.include_router(berichte.router, prefix="/api/berichte", tags=["Berichte"])
 app.include_router(graphrag.router, prefix="/api/graphrag", tags=["GraphRAG"])
+app.include_router(einstellungen_api.router, prefix="/api/einstellungen", tags=["Einstellungen"])
 
 
 @app.get("/")

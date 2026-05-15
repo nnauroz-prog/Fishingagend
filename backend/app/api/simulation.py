@@ -6,8 +6,11 @@ import asyncio
 import json
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, status
+from pydantic import BaseModel, Field
 
+from app.dienste.agent_dienst import hole_agent_dienst
 from app.dienste.ereignis_bus import hole_ereignis_bus
+from app.dienste.llm_dienst import hole_llm_dienst
 from app.dienste.plattform_dienst import PlattformDienst, hole_plattform_dienst
 from app.dienste.simulation_dienst import SimulationDienst, hole_simulation_dienst
 from app.modelle.simulation import Simulation, SimulationErstellen
@@ -31,6 +34,62 @@ async def plane(
     dienst: SimulationDienst = Depends(hole_simulation_dienst),
 ) -> Simulation:
     return await dienst.plane(eingabe)
+
+
+class AusTextAnfrage(BaseModel):
+    beschreibung: str = Field(min_length=10, max_length=2000)
+
+
+_ANALYSE_SYSTEM = """Du parsest eine natuerlichsprachige Sim-Anforderung.
+Waehle aus den verfuegbaren Agenten passende Teilnehmer und schlage eine
+Konfiguration vor. Antworte als JSON:
+
+{
+  "name": "Kurzer aussagekraeftiger Titel",
+  "beschreibung": "1-2 Saetze",
+  "schritte": 3-30,
+  "variable": {"feld": "wert"},
+  "dual_modus": true,
+  "plattform_modus": false,
+  "agent_namen": ["Name 1", "Name 2"]
+}
+
+Waehle nur Namen aus der gegebenen Liste."""
+
+
+@router.post("/aus-text", response_model=SimulationErstellen)
+async def aus_text(anfrage: AusTextAnfrage) -> SimulationErstellen:
+    """Schlaegt aus einer freien Beschreibung eine Sim-Konfiguration vor."""
+    agenten = await hole_agent_dienst().liste()
+    namen_index = {a.persona.name: a.id for a in agenten}
+    katalog = "\n".join(
+        f"- {a.persona.name} ({a.persona.beruf or '—'})" for a in agenten[:30]
+    ) or "(keine Agenten — bitte zuerst welche anlegen)"
+
+    anweisung = (
+        f"Verfuegbare Agenten:\n{katalog}\n\nAnforderung:\n{anfrage.beschreibung}"
+    )
+    roh = await hole_llm_dienst().antworte_json(_ANALYSE_SYSTEM, anweisung)
+
+    namen = [n for n in roh.get("agent_namen", []) if n in namen_index]
+    if not namen:
+        namen = list(namen_index.keys())[:5]
+    ids = [namen_index[n] for n in namen]
+    if not ids:
+        raise HTTPException(
+            status_code=400,
+            detail="Keine Agenten verfuegbar — bitte zuerst Agenten anlegen.",
+        )
+
+    return SimulationErstellen(
+        name=str(roh.get("name") or "Auto-Simulation")[:200],
+        beschreibung=str(roh.get("beschreibung") or anfrage.beschreibung)[:500],
+        agent_ids=ids,
+        schritte=int(roh.get("schritte") or 5),
+        variable=dict(roh.get("variable") or {}),
+        dual_modus=bool(roh.get("dual_modus", True)),
+        plattform_modus=bool(roh.get("plattform_modus", False)),
+    )
 
 
 @router.get("/{sim_id}", response_model=Simulation)

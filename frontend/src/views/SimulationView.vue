@@ -2,11 +2,13 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { simulationApi } from '@/api/simulation';
 import type { SimulationStatus } from '@/api/typen';
 import SimulationsAnzeige from '@/components/SimulationsAnzeige.vue';
 import Suchfeld from '@/components/Suchfeld.vue';
 import { useAgentenStore } from '@/store/agenten';
 import { useSimulationStore } from '@/store/simulation';
+import { useToastStore } from '@/store/toasts';
 
 const { t } = useI18n();
 const sims = useSimulationStore();
@@ -25,6 +27,27 @@ const formular = reactive({
 const fehler = ref<string | null>(null);
 const suche = ref('');
 const statusFilter = ref<SimulationStatus | ''>('');
+const toasts = useToastStore();
+const ausText = ref('');
+const ausTextLaedt = ref(false);
+
+async function vorschlagAusText() {
+  if (!ausText.value.trim()) return;
+  ausTextLaedt.value = true;
+  try {
+    const v = await simulationApi.ausText(ausText.value);
+    formular.name = v.name;
+    formular.beschreibung = v.beschreibung ?? '';
+    formular.schritte = v.schritte;
+    formular.dual_modus = v.dual_modus;
+    formular.plattform_modus = v.plattform_modus ?? false;
+    formular.variableJson = JSON.stringify(v.variable, null, 2);
+    formular.ausgewaehlt = v.agent_ids;
+    toasts.erfolg('Konfiguration vorgeschlagen — bitte prüfen und speichern.');
+  } finally {
+    ausTextLaedt.value = false;
+  }
+}
 
 const gefiltert = computed(() => {
   const q = suche.value.trim().toLowerCase();
@@ -77,6 +100,23 @@ async function planen() {
 <template>
   <section class="space-y-6">
     <h1 class="text-2xl font-bold">{{ t('simulation.titel') }}</h1>
+
+    <article class="karte space-y-3">
+      <h2 class="text-sm font-semibold uppercase text-slate-500">
+        {{ t('simulation.aus_text_titel') }}
+      </h2>
+      <div class="flex gap-2">
+        <input
+          v-model="ausText"
+          class="eingabe flex-1"
+          :placeholder="t('simulation.aus_text_platzhalter')"
+          @keyup.enter="vorschlagAusText"
+        />
+        <button class="knopf-primaer" :disabled="ausTextLaedt" @click="vorschlagAusText">
+          {{ ausTextLaedt ? '…' : t('simulation.aus_text_knopf') }}
+        </button>
+      </div>
+    </article>
 
     <form class="karte grid gap-3 md:grid-cols-2" @submit.prevent="planen">
       <div class="md:col-span-2">
