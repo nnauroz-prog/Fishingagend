@@ -35,6 +35,7 @@
     "titel": "Chat",
     "platzhalter": "Type a message ...",
     "senden": "Send",
+    "abbrechen": "Cancel",
     "agent_waehlen": "Please select an agent first.",
     "denkt": "Agent is thinking ..."
   },

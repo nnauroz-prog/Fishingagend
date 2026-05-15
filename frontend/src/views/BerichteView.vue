@@ -1,19 +1,37 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { simulationApi } from '@/api/simulation';
 import { useSimulationStore } from '@/store/simulation';
+import { useToastStore } from '@/store/toasts';
+import { rendereMarkdown } from '@/werkzeuge/markdown';
 
 const { t } = useI18n();
 const store = useSimulationStore();
+const toasts = useToastStore();
 const aktuellerBericht = ref<string | null>(null);
+const aktuellerName = ref<string | null>(null);
+const ladend = ref(false);
+
+const html = computed(() => (aktuellerBericht.value ? rendereMarkdown(aktuellerBericht.value) : ''));
+const fertige = computed(() =>
+  store.simulationen.filter((s) => s.status === 'abgeschlossen'),
+);
 
 onMounted(() => store.laden());
 
-async function anzeigen(id: string) {
-  const r = await simulationApi.bericht(id);
-  aktuellerBericht.value = r.markdown;
+async function anzeigen(id: string, name: string) {
+  ladend.value = true;
+  try {
+    const r = await simulationApi.bericht(id);
+    aktuellerBericht.value = r.markdown;
+    aktuellerName.value = name;
+  } catch {
+    toasts.fehler('Bericht konnte nicht geladen werden.');
+  } finally {
+    ladend.value = false;
+  }
 }
 </script>
 
@@ -21,24 +39,36 @@ async function anzeigen(id: string) {
   <section class="space-y-6">
     <h1 class="text-2xl font-bold">{{ t('berichte.titel') }}</h1>
 
-    <p v-if="!store.simulationen.length" class="text-sm text-slate-500">{{ t('berichte.leer') }}</p>
+    <p v-if="!fertige.length" class="text-sm text-slate-500">{{ t('berichte.leer') }}</p>
 
-    <ul class="space-y-2">
-      <li
-        v-for="sim in store.simulationen.filter((s) => s.status === 'abgeschlossen')"
-        :key="sim.id"
-        class="flex items-center justify-between rounded border border-slate-200 px-4 py-2 dark:border-slate-700"
+    <div v-else class="grid gap-6 lg:grid-cols-[20rem,1fr]">
+      <ul class="space-y-1">
+        <li
+          v-for="sim in fertige"
+          :key="sim.id"
+        >
+          <button
+            class="w-full rounded border border-slate-200 px-3 py-2 text-left text-sm hover:bg-markenblau-50 dark:border-slate-700 dark:hover:bg-slate-700"
+            :class="{ 'bg-markenblau-50 dark:bg-slate-700': aktuellerName === sim.name }"
+            @click="anzeigen(sim.id, sim.name)"
+          >
+            <div class="font-medium">{{ sim.name }}</div>
+            <div class="text-xs text-slate-500">
+              {{ sim.schritte }} Schritte · {{ sim.agent_ids.length }} Agenten
+            </div>
+          </button>
+        </li>
+      </ul>
+
+      <article
+        class="karte prose prose-slate min-h-[24rem] max-w-none dark:prose-invert"
       >
-        <span>{{ sim.name }}</span>
-        <button class="knopf-sekundaer text-xs" @click="anzeigen(sim.id)">
-          {{ t('berichte.anzeigen') }}
-        </button>
-      </li>
-    </ul>
-
-    <pre
-      v-if="aktuellerBericht"
-      class="karte whitespace-pre-wrap font-mono text-xs"
-    >{{ aktuellerBericht }}</pre>
+        <p v-if="ladend" class="text-sm text-slate-500">…</p>
+        <p v-else-if="!aktuellerBericht" class="text-sm text-slate-500">
+          {{ t('berichte.anzeigen') }} →
+        </p>
+        <div v-else v-html="html" />
+      </article>
+    </div>
   </section>
 </template>

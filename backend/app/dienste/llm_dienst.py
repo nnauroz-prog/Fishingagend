@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -32,6 +34,14 @@ class LLMSchnittstelle(Protocol):
         max_token: int = ...,
         temperatur: float = ...,
     ) -> LLMAntwort: ...
+
+    def stroeme(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, str]],
+        max_token: int = ...,
+        temperatur: float = ...,
+    ) -> AsyncIterator[str]: ...
 
 
 class LLMDienst:
@@ -95,6 +105,30 @@ class LLMDienst:
         )
         return _parse_json(roh.text)
 
+    async def stroeme(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, str]],
+        max_token: int = 1024,
+        temperatur: float = 0.7,
+    ) -> AsyncIterator[str]:
+        """Streamt Text-Deltas vom LLM."""
+        async with self._client.messages.stream(
+            model=self._modell,
+            max_tokens=max_token,
+            temperature=temperatur,
+            system=[
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=verlauf,  # type: ignore[arg-type]
+        ) as strom:
+            async for text in strom.text_stream:
+                yield text
+
 
 class MockLLMDienst:
     """Liefert deterministische Antworten — für Tests ohne API-Key."""
@@ -125,6 +159,19 @@ class MockLLMDienst:
     ) -> dict[str, Any]:
         antwort = await self.antworte(system_prompt, [{"role": "user", "content": anweisung}])
         return _parse_json(antwort.text)
+
+    async def stroeme(
+        self,
+        system_prompt: str,
+        verlauf: list[dict[str, str]],
+        max_token: int = 1024,
+        temperatur: float = 0.7,
+    ) -> AsyncIterator[str]:
+        """Streamt die Mock-Antwort wortweise — nützlich für Frontend-Tests."""
+        antwort = await self.antworte(system_prompt, verlauf, max_token, temperatur)
+        for wort in antwort.text.split(" "):
+            await asyncio.sleep(0)
+            yield wort + " "
 
 
 def _parse_json(text: str) -> dict[str, Any]:

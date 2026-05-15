@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -7,15 +7,18 @@ import { chatApi } from '@/api/chat';
 import type { Nachricht } from '@/api/typen';
 import ChatNachricht from '@/components/ChatNachricht.vue';
 import { useAgentenStore } from '@/store/agenten';
+import { useToastStore } from '@/store/toasts';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useAgentenStore();
+const toasts = useToastStore();
 
 const eingabe = ref('');
 const verlauf = ref<Nachricht[]>([]);
 const sendet = ref(false);
+const aktiverStream = ref<(() => void) | null>(null);
 const liste = ref<HTMLDivElement | null>(null);
 
 const agentId = computed({
@@ -29,33 +32,57 @@ onMounted(async () => {
   if (!store.agenten.length) await store.laden();
 });
 
+onUnmounted(() => aktiverStream.value?.());
+
 watch(agentId, () => {
+  aktiverStream.value?.();
   verlauf.value = [];
 });
 
-async function senden() {
-  if (!agentId.value || !eingabe.value.trim()) return;
+async function nachUnten() {
+  await nextTick();
+  liste.value?.scrollTo({ top: liste.value.scrollHeight });
+}
+
+function senden() {
+  if (!agentId.value || !eingabe.value.trim() || sendet.value) return;
   const text = eingabe.value.trim();
   verlauf.value.push({ rolle: 'nutzer', inhalt: text, zeitstempel: new Date().toISOString() });
   eingabe.value = '';
   sendet.value = true;
-  await nextTick();
-  liste.value?.scrollTo({ top: liste.value.scrollHeight });
 
-  try {
-    const antwort = await chatApi.senden(agentId.value, text, verlauf.value);
-    verlauf.value.push(antwort.nachricht);
-  } catch {
-    verlauf.value.push({
-      rolle: 'system',
-      inhalt: t('fehler.netzwerk'),
-      zeitstempel: new Date().toISOString(),
-    });
-  } finally {
-    sendet.value = false;
-    await nextTick();
-    liste.value?.scrollTo({ top: liste.value.scrollHeight });
-  }
+  const platzhalter: Nachricht = {
+    rolle: 'agent',
+    inhalt: '',
+    zeitstempel: new Date().toISOString(),
+  };
+  verlauf.value.push(platzhalter);
+  void nachUnten();
+
+  aktiverStream.value = chatApi.stroeme(agentId.value, text, verlauf.value.slice(0, -2), {
+    aufDelta(delta) {
+      platzhalter.inhalt += delta;
+      void nachUnten();
+    },
+    aufEnde(gesamt) {
+      platzhalter.inhalt = gesamt;
+      sendet.value = false;
+      aktiverStream.value = null;
+    },
+    aufFehler(meldung) {
+      platzhalter.inhalt = '';
+      verlauf.value.pop();
+      toasts.fehler(`${t('fehler.allgemein')} ${meldung}`);
+      sendet.value = false;
+      aktiverStream.value = null;
+    },
+  });
+}
+
+function abbrechen() {
+  aktiverStream.value?.();
+  aktiverStream.value = null;
+  sendet.value = false;
 }
 </script>
 
@@ -75,10 +102,7 @@ async function senden() {
       {{ aktiverAgent.persona.beruf }} — {{ aktiverAgent.persona.hintergrund }}
     </p>
 
-    <div
-      ref="liste"
-      class="karte flex-1 overflow-y-auto"
-    >
+    <div ref="liste" class="karte flex-1 overflow-y-auto">
       <div v-if="!verlauf.length" class="grid h-full place-items-center text-sm text-slate-500">
         {{ t('chat.agent_waehlen') }}
       </div>
@@ -93,10 +117,13 @@ async function senden() {
         v-model="eingabe"
         :placeholder="t('chat.platzhalter')"
         class="eingabe flex-1"
-        :disabled="!agentId || sendet"
+        :disabled="!agentId"
       />
-      <button type="submit" class="knopf-primaer" :disabled="!agentId || sendet">
+      <button v-if="!sendet" type="submit" class="knopf-primaer" :disabled="!agentId">
         {{ t('chat.senden') }}
+      </button>
+      <button v-else type="button" class="knopf-sekundaer" @click="abbrechen">
+        {{ t('chat.abbrechen') }}
       </button>
     </form>
   </section>
