@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
+import { agentenApi } from '@/api/agenten';
 import AgentKarte from '@/components/AgentKarte.vue';
 import { useAgentenStore } from '@/store/agenten';
 
@@ -11,14 +12,34 @@ const router = useRouter();
 const store = useAgentenStore();
 
 const formularSichtbar = ref(false);
+const vorschlaegt = ref(false);
 const formular = reactive({
+  saat: '',
   name: '',
   beruf: '',
   hintergrund: '',
   werte: '',
+  charakterzuege: [] as string[],
+  sprachstil: 'neutral',
 });
 
 onMounted(() => store.laden());
+
+async function vorschlagen() {
+  if (!formular.saat.trim()) return;
+  vorschlaegt.value = true;
+  try {
+    const persona = await agentenApi.personaAusSaat({ stichworte: formular.saat });
+    formular.name = persona.name;
+    formular.beruf = persona.beruf ?? '';
+    formular.hintergrund = persona.hintergrund;
+    formular.werte = persona.werte.join(', ');
+    formular.charakterzuege = persona.charakterzuege;
+    formular.sprachstil = persona.sprachstil;
+  } finally {
+    vorschlaegt.value = false;
+  }
+}
 
 async function speichern() {
   if (!formular.name.trim()) return;
@@ -31,13 +52,21 @@ async function speichern() {
         .split(',')
         .map((w) => w.trim())
         .filter(Boolean),
-      charakterzuege: [],
+      charakterzuege: formular.charakterzuege,
       beziehungen: {},
-      sprachstil: 'neutral',
+      sprachstil: formular.sprachstil,
     },
   });
   formularSichtbar.value = false;
-  Object.assign(formular, { name: '', beruf: '', hintergrund: '', werte: '' });
+  Object.assign(formular, {
+    saat: '',
+    name: '',
+    beruf: '',
+    hintergrund: '',
+    werte: '',
+    charakterzuege: [],
+    sprachstil: 'neutral',
+  });
 }
 
 function zumChat(agentId: string) {
@@ -55,6 +84,18 @@ function zumChat(agentId: string) {
     </header>
 
     <form v-if="formularSichtbar" class="karte space-y-3" @submit.prevent="speichern">
+      <div>
+        <label class="etikett" for="saat">{{ t('agenten.saat') }}</label>
+        <div class="flex gap-2">
+          <input id="saat" v-model="formular.saat" class="eingabe flex-1" />
+          <button type="button" class="knopf-sekundaer" :disabled="vorschlaegt" @click="vorschlagen">
+            {{ vorschlaegt ? t('agenten.vorschlaegt') : t('agenten.vorschlag') }}
+          </button>
+        </div>
+      </div>
+
+      <hr class="border-slate-200 dark:border-slate-700" />
+
       <div>
         <label class="etikett" for="name">{{ t('agenten.name') }}</label>
         <input id="name" v-model="formular.name" class="eingabe" required />

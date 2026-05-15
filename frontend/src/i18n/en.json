@@ -26,7 +26,10 @@
     "werte": "Values (comma-separated)",
     "speichern": "Save",
     "abbrechen": "Cancel",
-    "loeschen": "Delete"
+    "loeschen": "Delete",
+    "saat": "Seed keywords (e.g. \"climate researcher in Berlin, cautious\")",
+    "vorschlag": "Suggest persona",
+    "vorschlaegt": "Generating …"
   },
   "chat": {
     "titel": "Chat",

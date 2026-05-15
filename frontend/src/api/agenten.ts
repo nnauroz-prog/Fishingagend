@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import type { Agent, AgentErstellen } from '@/api/typen';
+import type { Agent, AgentErstellen, Persona } from '@/api/typen';
 
 export const agentenApi = {
   liste: () => apiClient.get<Agent[]>('/api/agenten').then((r) => r.data),
@@ -7,4 +7,6 @@ export const agentenApi = {
   erstelle: (eingabe: AgentErstellen) =>
     apiClient.post<Agent>('/api/agenten', eingabe).then((r) => r.data),
   loesche: (id: string) => apiClient.delete<void>(`/api/agenten/${id}`).then((r) => r.data),
+  personaAusSaat: (saat: Record<string, string>) =>
+    apiClient.post<Persona>('/api/agenten/aus-saat', { saat }).then((r) => r.data),
 };

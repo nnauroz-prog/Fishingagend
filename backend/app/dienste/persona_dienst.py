@@ -1,31 +1,40 @@
-"""Persona-Generierung aus dem Knowledge-Graph (Stub)."""
+"""Persona-Generierung — erzeugt aus Saat-Daten eine glaubwürdige Persona via LLM."""
 
 from __future__ import annotations
 
-from app.dienste.llm_dienst import hole_llm_dienst
+from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
 from app.modelle.persona import Persona
+
+_SYSTEM = """Du bist Persona-Designer für eine Multi-Agenten-Simulation.
+Aus den übergebenen Saat-Daten erzeugst du eine plausible, dreidimensionale
+Person. Die Person muss konsistent und realistisch sein — keine Karikatur.
+
+Antwortformat (JSON-Objekt):
+{
+  "name": "Vorname Nachname",
+  "alter": 18-90,
+  "beruf": "klare Berufsbezeichnung",
+  "hintergrund": "2-3 Sätze Lebenslauf, prägende Erfahrungen",
+  "werte": ["Wert 1", "Wert 2", "Wert 3"],
+  "charakterzuege": ["Zug 1", "Zug 2", "Zug 3"],
+  "sprachstil": "z. B. fachlich, salopp, formell, knapp"
+}
+Antworte ausschließlich auf Deutsch."""
 
 
 class PersonaDienst:
-    """Erzeugt aus Saat-Daten und Graph-Knoten eine plausible Persona."""
+    def __init__(self, llm: LLMSchnittstelle | None = None) -> None:
+        self._llm = llm or hole_llm_dienst()
 
     async def generiere(self, saat: dict[str, str]) -> Persona:
-        """Stub-Implementierung — der LLM-Aufruf ist vorbereitet, aber deaktiviert.
-
-        Sobald ein API-Key gesetzt ist, kann der untenstehende Block aktiviert
-        werden, um echte Personas zu erzeugen.
-        """
-        # llm = hole_llm_dienst()
-        # antwort = await llm.antworte(
-        #     system_prompt="Du bist ein Persona-Designer ...",
-        #     verlauf=[{"role": "user", "content": json.dumps(saat)}],
-        # )
-        _ = hole_llm_dienst  # nur, damit der Import nicht ungenutzt ist
+        anweisung = "Saat-Daten:\n" + "\n".join(f"- {k}: {v}" for k, v in saat.items())
+        roh = await self._llm.antworte_json(_SYSTEM, anweisung)
         return Persona(
-            name=saat.get("name", "Unbenannt"),
-            beruf=saat.get("beruf"),
-            hintergrund=saat.get("hintergrund", ""),
-            werte=saat.get("werte", "").split(",") if saat.get("werte") else [],
-            charakterzuege=[],
-            sprachstil="neutral",
+            name=str(roh.get("name", saat.get("name", "Unbenannt"))),
+            alter=roh.get("alter"),
+            beruf=roh.get("beruf"),
+            hintergrund=str(roh.get("hintergrund", "")),
+            werte=list(roh.get("werte", [])),
+            charakterzuege=list(roh.get("charakterzuege", [])),
+            sprachstil=str(roh.get("sprachstil", "neutral")),
         )

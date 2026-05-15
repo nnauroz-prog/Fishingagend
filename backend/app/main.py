@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import agenten, berichte, chat, graphrag, simulation, zustand
 from app.config import einstellungen
+from app.datenbank import initialisiere_datenbank
 from app.werkzeuge.logger import erstelle_logger
 
 logger = erstelle_logger(__name__)
@@ -18,6 +19,7 @@ logger = erstelle_logger(__name__)
 @asynccontextmanager
 async def lebenszyklus(_app: FastAPI) -> AsyncIterator[None]:
     logger.info("starte_anwendung", modell=einstellungen.anthropic_modell)
+    await initialisiere_datenbank()
     yield
     logger.info("beende_anwendung")
 

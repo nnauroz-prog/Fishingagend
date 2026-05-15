@@ -25,13 +25,20 @@ export const useSimulationStore = defineStore('simulation', () => {
     return neu;
   }
 
-  async function starten(id: string) {
-    const sim = await simulationApi.starte(id);
+  async function starten(id: string, sofort = false) {
+    const sim = await simulationApi.starte(id, sofort);
     const idx = simulationen.value.findIndex((s) => s.id === id);
     if (idx >= 0) simulationen.value[idx] = sim;
     aktiv.value = sim;
     return sim;
   }
 
-  return { simulationen, aktiv, ladend, laden, planen, starten };
+  async function aktualisiere(id: string) {
+    const sim = await simulationApi.hole(id);
+    const idx = simulationen.value.findIndex((s) => s.id === id);
+    if (idx >= 0) simulationen.value[idx] = sim;
+    return sim;
+  }
+
+  return { simulationen, aktiv, ladend, laden, planen, starten, aktualisiere };
 });

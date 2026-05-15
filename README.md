@@ -74,19 +74,25 @@ npm run dev
 ## Module
 
 ### GraphRAG-Aufbau und Entitäts-Extraktion
-Texte werden zerlegt, Entitäten und Beziehungen identifiziert und in einem Knowledge-Graph abgelegt. Siehe `backend/app/dienste/graphrag_dienst.py`.
+Texte werden in Chunks zerlegt; pro Chunk fragt das LLM nach Entitäten (Person, Organisation, Ort, Konzept, Ereignis) und Beziehungen, die anschließend dedupliziert in einem Wissensgraphen landen. Siehe `backend/app/dienste/graphrag_dienst.py`.
 
 ### Persona-Generierung
-Aus dem Knowledge-Graph werden Agenten-Personas erzeugt: Name, Hintergrund, Charakterzüge, Werte, Beziehungen. Siehe `backend/app/dienste/persona_dienst.py`.
+Aus Saat-Stichworten wird via LLM eine vollständige Persona erzeugt — Name, Alter, Beruf, Hintergrund, Werte, Charakterzüge, Sprachstil. Robustes JSON-Parsing, das auch Markdown-Fences toleriert. Siehe `backend/app/dienste/persona_dienst.py`.
 
-### Dual-Plattform-Simulation
-Zwei parallele Welten — eine Kontrollwelt und eine mit eingespeister Variable — laufen synchron, sodass Effekte direkt vergleichbar werden. Siehe `backend/app/dienste/simulation_dienst.py`.
+### Dual-Welt-Simulation
+Zwei Welten laufen parallel: in der Kontroll-Welt agieren die Agenten ohne externe Variable, in der Varianten-Welt mit. Pro Schritt entscheidet jeder Agent (LLM-Aufruf) seine nächste Aktion auf Basis des bisherigen Verlaufs. Läuft im Hintergrund — der `POST /api/simulation/{id}/starte`-Endpunkt antwortet sofort, das Frontend pollt den Status. Mit `?sofort=true` läuft sie synchron. Siehe `backend/app/dienste/simulation_dienst.py`.
 
 ### Berichts-Agent
-Sammelt Simulationsdaten, ruft Werkzeuge auf (Statistik, Visualisierung, Zusammenfassung) und liefert einen lesbaren Bericht. Siehe `backend/app/dienste/bericht_dienst.py`.
+Aggregiert Schritte, schickt sie als Anweisung an das LLM und erhält einen Markdown-Bericht mit Zusammenfassung, Beobachtungen je Welt, Schlüsselereignissen und Empfehlung. Siehe `backend/app/dienste/bericht_dienst.py`.
 
 ### Chat
-Direktes Gespräch mit einem simulierten Agenten — inklusive Kontext aus dessen Gedächtnis. Siehe `backend/app/api/chat.py`.
+Direktes Gespräch mit einem simulierten Agenten — inklusive Kontext aus dessen Langzeit-Gedächtnis (in der DB persistiert). Persona-Block ist via Prompt-Caching markiert. Siehe `backend/app/api/chat.py`.
+
+### Persistenz
+SQLAlchemy mit Async-SQLite; Tabellen werden beim Start automatisch erstellt. PostgreSQL: einfach `DATENBANK_URL` umstellen.
+
+### Mock-LLM für Entwicklung & Tests
+Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. Die Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — also auch ohne API-Key komplett deckungsgleich.
 
 ## Entwicklung
 

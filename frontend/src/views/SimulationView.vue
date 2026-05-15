@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import SimulationsAnzeige from '@/components/SimulationsAnzeige.vue';
@@ -21,8 +21,18 @@ const formular = reactive({
 
 const fehler = ref<string | null>(null);
 
+let timer: ReturnType<typeof setInterval> | null = null;
+
 onMounted(async () => {
   await Promise.all([sims.laden(), agenten.laden()]);
+  timer = setInterval(async () => {
+    const laufende = sims.simulationen.filter((s) => s.status === 'laeuft');
+    await Promise.all(laufende.map((s) => sims.aktualisiere(s.id)));
+  }, 3000);
+});
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer);
 });
 
 async function planen() {

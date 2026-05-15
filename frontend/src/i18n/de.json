@@ -26,7 +26,10 @@
     "werte": "Werte (kommagetrennt)",
     "speichern": "Speichern",
     "abbrechen": "Abbrechen",
-    "loeschen": "Löschen"
+    "loeschen": "Löschen",
+    "saat": "Saat-Stichworte (z. B. „Klimaforscherin in Berlin, vorsichtig“)",
+    "vorschlag": "Persona vorschlagen",
+    "vorschlaegt": "Wird erzeugt …"
   },
   "chat": {
     "titel": "Chat",
