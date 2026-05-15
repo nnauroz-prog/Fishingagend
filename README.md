@@ -4,7 +4,7 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
-![Backend tests](https://img.shields.io/badge/backend%20tests-55%2F55%20%E2%9C%93-success)
+![Backend tests](https://img.shields.io/badge/backend%20tests-60%2F60%20%E2%9C%93-success)
 ![Frontend tests](https://img.shields.io/badge/frontend%20tests-18%2F18%20%E2%9C%93-success)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
@@ -170,6 +170,17 @@ Nach jeder abgeschlossenen Sim greift der `LernDienst` automatisch — vier Mech
 
 ### Audit-Log
 Alle schreibenden Aktionen landen mit Zeitstempel und Details in `audit_log`. Sichtbar unter `/audit`, filterbar pro Ressource, REST-Endpunkt `GET /api/audit`.
+
+### Authentifizierung (opt-in)
+Aktivierbar via `AUTH_AKTIV=true`. Backend liefert:
+- `POST /api/auth/registriere` — Konto anlegen (Email + Passwort + Anzeige-Name).
+- `POST /api/auth/anmelde` — JWT-Token zurück (`Authorization: Bearer …`).
+- `GET /api/auth/ich` — aktueller Nutzer.
+
+Beim ersten Start wird automatisch ein Admin-User angelegt (`ADMIN_EMAIL`/`ADMIN_PASSWORT`). Passwörter werden mit `pbkdf2_sha256` gehasht. Frontend persistiert das Token in `localStorage`, axios-Interceptor hängt es an jeden Request, Anmelden-View mit Toggle Login/Register, Avatar + Abmelden-Knopf in der Navigationsleiste.
+
+### Skalierung
+`MAX_PARALLELE_LLM_AUFRUFE` (default 10) begrenzt parallele LLM-Calls per `asyncio.Semaphore`. Schützt das LLM-Konto vor Rate-Limit-Spitzen bei großen Sims.
 
 ### Mock-LLM für Entwicklung & Tests
 Ohne API-Key startet die App mit einem deterministischen Mock-LLM. Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — die App ist damit ohne API-Key komplett klickbar.
