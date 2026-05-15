@@ -4,7 +4,7 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
-![Backend tests](https://img.shields.io/badge/backend%20tests-39%2F39%20%E2%9C%93-success)
+![Backend tests](https://img.shields.io/badge/backend%20tests-55%2F55%20%E2%9C%93-success)
 ![Frontend tests](https://img.shields.io/badge/frontend%20tests-18%2F18%20%E2%9C%93-success)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
@@ -151,6 +151,25 @@ Jede Aktion in einer Sim landet automatisch im Langzeit-Gedächtnis des handelnd
 
 ### Multi-Provider-LLM
 `LLM_PROVIDER=anthropic|openai`. OpenAI-Adapter funktioniert mit OpenAI selbst, Alibaba Qwen (Bailian, MiroFish-Standard), Ollama, vLLM, LocalAI — alles, was das OpenAI-Chat-API spricht. Sichtbar unter `/einstellungen`.
+
+### Echtes Lernen
+Nach jeder abgeschlossenen Sim greift der `LernDienst` automatisch — vier Mechanismen:
+- **Reflexion**: Jeder Teilnehmer schreibt eine 1-Satz-Selbst­beobachtung ins Gedächtnis.
+- **Beziehungen**: `persona.beziehungen` wird aufgrund der Sim-Aktionen aktualisiert (`{"Bert": "vertrauensvoll, stimmt oft zu"}`). Sichtbar im Beziehungs-Graphen.
+- **Memory-Konsolidierung**: Bei >50 Episoden wird die älteste Hälfte zu einer einzigen Zusammenfassung verdichtet.
+- **Werte-Drift** (opt-in via `WERTE_DRIFT_AKTIV=true`): Werte/Charakterzüge werden dezent angepasst — max. ein Eintrag pro Sim hinzu/weg.
+- **Präferenzen-Tracking** (kein LLM): Tag-Cloud aus den häufigsten Begriffen und Personen im Memory.
+
+### Beziehungs-Graph + Stimmungsverlauf + Sim-Replay
+- `/beziehungen` zeigt alle Agenten und ihre gelernten Verbindungen interaktiv (eigene Force-Layout-Implementierung).
+- Pro Sim entsteht ein Sentiment-Verlauf (Wörterbuch-basiert, ohne LLM) als SVG-Liniendiagramm.
+- Abgeschlossene Sims können Schritt für Schritt abgespielt werden (Slider + Play/Pause).
+
+### Sim-Vergleich + Batch-Sim
+`/simulation/vergleich` stellt zwei Sims direkt nebeneinander, `/simulation/batch` startet automatisch N Sims mit verschiedenen Variablen (Sensitivitäts-Analyse).
+
+### Audit-Log
+Alle schreibenden Aktionen landen mit Zeitstempel und Details in `audit_log`. Sichtbar unter `/audit`, filterbar pro Ressource, REST-Endpunkt `GET /api/audit`.
 
 ### Mock-LLM für Entwicklung & Tests
 Ohne API-Key startet die App mit einem deterministischen Mock-LLM. Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — die App ist damit ohne API-Key komplett klickbar.
