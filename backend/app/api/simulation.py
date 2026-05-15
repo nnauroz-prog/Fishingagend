@@ -8,6 +8,7 @@ import json
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, status
 
 from app.dienste.ereignis_bus import hole_ereignis_bus
+from app.dienste.plattform_dienst import PlattformDienst, hole_plattform_dienst
 from app.dienste.simulation_dienst import SimulationDienst, hole_simulation_dienst
 from app.modelle.simulation import Simulation, SimulationErstellen
 
@@ -41,6 +42,26 @@ async def hole(
     if sim is None:
         raise HTTPException(status_code=404, detail="Simulation nicht gefunden")
     return sim
+
+
+@router.get("/{sim_id}/feed")
+async def feed(
+    sim_id: str,
+    welt: str | None = None,
+    plattform: PlattformDienst = Depends(hole_plattform_dienst),
+) -> list[dict]:
+    """Plattform-Feed (Posts + Reaktionen) einer Simulation."""
+    return await plattform.feed(sim_id, welt=welt)
+
+
+@router.get("/{sim_id}/folgen")
+async def folgen(
+    sim_id: str,
+    welt: str | None = None,
+    plattform: PlattformDienst = Depends(hole_plattform_dienst),
+) -> list[dict]:
+    """Folge-Beziehungen, die in der Simulation entstanden sind."""
+    return await plattform.folgen(sim_id, welt=welt)
 
 
 @router.get("/{sim_id}/export")

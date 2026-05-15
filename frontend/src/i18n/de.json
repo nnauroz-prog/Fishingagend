@@ -69,6 +69,7 @@
     "agenten": "Agenten",
     "variable": "Variable (JSON)",
     "dual_modus": "Dual-Modus (Kontroll- vs. Variantenwelt)",
+    "plattform_modus": "Plattform-Modus (Posts, Reaktionen, Folgen)",
     "status_geplant": "geplant",
     "status_laeuft": "läuft",
     "status_abgeschlossen": "abgeschlossen",

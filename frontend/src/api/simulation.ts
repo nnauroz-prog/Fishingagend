@@ -1,5 +1,10 @@
 import { apiClient } from '@/api/client';
-import type { Simulation, SimulationErstellen } from '@/api/typen';
+import type {
+  FeedBeitrag,
+  Folge,
+  Simulation,
+  SimulationErstellen,
+} from '@/api/typen';
 
 export const simulationApi = {
   liste: () => apiClient.get<Simulation[]>('/api/simulation').then((r) => r.data),
@@ -15,5 +20,13 @@ export const simulationApi = {
   berichtChat: (id: string, nachricht: string, verlauf: { rolle: string; inhalt: string; zeitstempel: string }[]) =>
     apiClient
       .post<{ antwort: string }>(`/api/berichte/${id}/chat`, { nachricht, verlauf })
+      .then((r) => r.data),
+  feed: (id: string, welt?: string) =>
+    apiClient
+      .get<FeedBeitrag[]>(`/api/simulation/${id}/feed`, { params: welt ? { welt } : {} })
+      .then((r) => r.data),
+  folgen: (id: string, welt?: string) =>
+    apiClient
+      .get<Folge[]>(`/api/simulation/${id}/folgen`, { params: welt ? { welt } : {} })
       .then((r) => r.data),
 };

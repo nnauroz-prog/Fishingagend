@@ -53,6 +53,7 @@ class SimulationZeile(Basis):
     schritte: Mapped[int] = mapped_column()
     variable_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     dual_modus: Mapped[bool] = mapped_column(default=True)
+    plattform_modus: Mapped[bool] = mapped_column(default=False)
     status: Mapped[str] = mapped_column(String(20), default="geplant")
     erstellt_am: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -95,6 +96,56 @@ class BeziehungZeile(Basis):
     nach: Mapped[str] = mapped_column(String(200), index=True)
     art: Mapped[str] = mapped_column(String(80))
     gewicht: Mapped[float] = mapped_column(default=1.0)
+
+
+class PlattformBeitragZeile(Basis):
+    """Ein Post in der simulierten Plattform."""
+
+    __tablename__ = "plattform_beitraege"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    simulation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("simulationen.id", ondelete="CASCADE"), index=True
+    )
+    welt: Mapped[str] = mapped_column(String(20))
+    schritt_nr: Mapped[int] = mapped_column()
+    autor: Mapped[str] = mapped_column(String(200), index=True)
+    inhalt: Mapped[str] = mapped_column(Text)
+    erstellt_am: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class PlattformReaktionZeile(Basis):
+    """Reaktion (Like, Antwort, Repost) auf einen Beitrag."""
+
+    __tablename__ = "plattform_reaktionen"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    simulation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("simulationen.id", ondelete="CASCADE"), index=True
+    )
+    welt: Mapped[str] = mapped_column(String(20))
+    schritt_nr: Mapped[int] = mapped_column()
+    beitrag_id: Mapped[int] = mapped_column(
+        ForeignKey("plattform_beitraege.id", ondelete="CASCADE")
+    )
+    autor: Mapped[str] = mapped_column(String(200), index=True)
+    typ: Mapped[str] = mapped_column(String(20))  # like, antwort, repost
+    inhalt: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class PlattformFolgtZeile(Basis):
+    """Folge-Beziehung zwischen zwei Agenten in einer Welt."""
+
+    __tablename__ = "plattform_folgt"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    simulation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("simulationen.id", ondelete="CASCADE"), index=True
+    )
+    welt: Mapped[str] = mapped_column(String(20))
+    folger: Mapped[str] = mapped_column(String(200), index=True)
+    gefolgter: Mapped[str] = mapped_column(String(200), index=True)
+    schritt_nr: Mapped[int] = mapped_column()
 
 
 def _kodiere(wert: Any) -> str:

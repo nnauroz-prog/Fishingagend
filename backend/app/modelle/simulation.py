@@ -34,6 +34,10 @@ class SimulationErstellen(BaseModel):
         default=True,
         description="Zwei parallele Welten — eine Kontroll-, eine Variantenwelt",
     )
+    plattform_modus: bool = Field(
+        default=False,
+        description="Wenn aktiv: Agenten posten, reagieren und folgen (soziale Plattform)",
+    )
 
 
 class SimulationSchritt(BaseModel):
@@ -51,6 +55,7 @@ class Simulation(BaseModel):
     schritte: int
     variable: dict[str, Any] = Field(default_factory=dict)
     dual_modus: bool = True
+    plattform_modus: bool = False
     status: SimulationStatus = SimulationStatus.GEPLANT
     erstellt_am: datetime = Field(default_factory=datetime.utcnow)
     verlauf: list[SimulationSchritt] = Field(default_factory=list)

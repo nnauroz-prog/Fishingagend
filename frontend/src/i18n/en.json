@@ -69,6 +69,7 @@
     "agenten": "Agents",
     "variable": "Variable (JSON)",
     "dual_modus": "Dual mode (control vs. variant world)",
+    "plattform_modus": "Platform mode (posts, reactions, follows)",
     "status_geplant": "planned",
     "status_laeuft": "running",
     "status_abgeschlossen": "completed",

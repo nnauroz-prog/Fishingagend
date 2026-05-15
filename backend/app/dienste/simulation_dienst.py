@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from app.datenbank import (
     AgentZeile,
+    PlattformBeitragZeile,
     SimulationSchrittZeile,
     SimulationZeile,
     dekodiere_json,
@@ -18,6 +19,7 @@ from app.datenbank import (
 )
 from app.dienste.ereignis_bus import hole_ereignis_bus
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
+from app.dienste.plattform_dienst import hole_plattform_dienst
 from app.modelle.agent import Agent
 from app.modelle.persona import Persona
 from app.modelle.simulation import (
@@ -69,6 +71,7 @@ class SimulationDienst:
                 schritte=eingabe.schritte,
                 variable_json=eingabe.variable,
                 dual_modus=eingabe.dual_modus,
+                plattform_modus=eingabe.plattform_modus,
             )
             session.add(zeile)
             await session.commit()
@@ -95,6 +98,7 @@ class SimulationDienst:
                         agenten=agenten,
                         variable=sim.variable if welt == "variante" else {},
                         bisher=beschreibungen[welt],
+                        plattform_modus=sim.plattform_modus,
                     )
                     for welt in welten
                 ]
@@ -145,6 +149,7 @@ class SimulationDienst:
         agenten: list[Agent],
         variable: dict[str, object],
         bisher: list[str],
+        plattform_modus: bool = False,
     ) -> SimulationSchritt:
         kontext = "\n".join(f"- {e}" for e in bisher[-10:]) or "(noch keine Ereignisse)"
         variablen_block = (
@@ -153,30 +158,35 @@ class SimulationDienst:
             else ""
         )
 
-        async def _einzelaktion(agent: Agent) -> str:
-            sys_prompt = _SYSTEM_AGENT.format(
-                name=agent.persona.name,
-                beruf=agent.persona.beruf or "unbekannt",
-                sprachstil=agent.persona.sprachstil,
-                hintergrund=agent.persona.hintergrund,
-                werte=", ".join(agent.persona.werte) or "—",
-                charakterzuege=", ".join(agent.persona.charakterzuege) or "—",
+        if plattform_modus:
+            ergebnisse = await self._plattform_schritt(
+                sim_id, welt, nummer, agenten, variablen_block
             )
-            anweisung = (
-                f"Schritt {nummer}, Welt: {welt}.\n"
-                f"{variablen_block}"
-                f"Bisherige Ereignisse:\n{kontext}\n\n"
-                "Beschreibe deine nächste Handlung in EINEM Satz."
-            )
-            antwort = await self._llm.antworte(
-                system_prompt=sys_prompt,
-                verlauf=[{"role": "user", "content": anweisung}],
-                max_token=120,
-                temperatur=0.8,
-            )
-            return f"{agent.persona.name}: {antwort.text.strip()}"
+        else:
+            async def _einzelaktion(agent: Agent) -> str:
+                sys_prompt = _SYSTEM_AGENT.format(
+                    name=agent.persona.name,
+                    beruf=agent.persona.beruf or "unbekannt",
+                    sprachstil=agent.persona.sprachstil,
+                    hintergrund=agent.persona.hintergrund,
+                    werte=", ".join(agent.persona.werte) or "—",
+                    charakterzuege=", ".join(agent.persona.charakterzuege) or "—",
+                )
+                anweisung = (
+                    f"Schritt {nummer}, Welt: {welt}.\n"
+                    f"{variablen_block}"
+                    f"Bisherige Ereignisse:\n{kontext}\n\n"
+                    "Beschreibe deine nächste Handlung in EINEM Satz."
+                )
+                antwort = await self._llm.antworte(
+                    system_prompt=sys_prompt,
+                    verlauf=[{"role": "user", "content": anweisung}],
+                    max_token=120,
+                    temperatur=0.8,
+                )
+                return f"{agent.persona.name}: {antwort.text.strip()}"
 
-        ergebnisse = await asyncio.gather(*(_einzelaktion(a) for a in agenten))
+            ergebnisse = await asyncio.gather(*(_einzelaktion(a) for a in agenten))
         schritt = SimulationSchritt(nummer=nummer, welt=welt, ereignisse=ergebnisse)  # type: ignore[arg-type]
 
         async with session_factory()() as session:
@@ -202,6 +212,51 @@ class SimulationDienst:
         )
         return schritt
 
+    async def _plattform_schritt(
+        self,
+        sim_id: str,
+        welt: str,
+        nummer: int,
+        agenten: list[Agent],
+        variablen_block: str,
+    ) -> list[str]:
+        """Plattform-Schritt: jeder Agent waehlt Posten/Reagieren/Folgen.
+
+        Sequentiell, damit spaetere Agenten die frischen Posts frueherer Agenten
+        sehen — das spiegelt eine echte Plattform realistischer wider.
+        """
+        plattform = hole_plattform_dienst()
+        namen_alle = [a.persona.name for a in agenten]
+        ergebnisse: list[str] = []
+
+        for agent in agenten:
+            async with session_factory()() as session:
+                stmt = (
+                    select(PlattformBeitragZeile)
+                    .where(
+                        PlattformBeitragZeile.simulation_id == sim_id,
+                        PlattformBeitragZeile.welt == welt,
+                    )
+                    .order_by(PlattformBeitragZeile.id.desc())
+                    .limit(20)
+                )
+                beitraege = list(reversed((await session.execute(stmt)).scalars().all()))
+
+            andere = [n for n in namen_alle if n != agent.persona.name]
+            ergebnisse.append(
+                await plattform.naechste_aktion(
+                    sim_id=sim_id,
+                    welt=welt,
+                    schritt_nr=nummer,
+                    agent=agent,
+                    kontext_beitraege=beitraege,
+                    andere_namen=andere,
+                    variablen_text=variablen_block,
+                )
+            )
+
+        return ergebnisse
+
     async def _zu_modell(self, session, zeile: SimulationZeile) -> Simulation:
         await session.refresh(zeile, attribute_names=["schritt_zeilen"])
         verlauf = [
@@ -221,6 +276,7 @@ class SimulationDienst:
             schritte=zeile.schritte,
             variable=zeile.variable_json or {},
             dual_modus=zeile.dual_modus,
+            plattform_modus=zeile.plattform_modus,
             status=SimulationStatus(zeile.status),
             erstellt_am=zeile.erstellt_am,
             verlauf=verlauf,

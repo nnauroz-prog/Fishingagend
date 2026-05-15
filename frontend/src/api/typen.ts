@@ -40,6 +40,7 @@ export interface Simulation {
   schritte: number;
   variable: Record<string, unknown>;
   dual_modus: boolean;
+  plattform_modus: boolean;
   status: SimulationStatus;
   erstellt_am: string;
   verlauf: SimulationSchritt[];
@@ -52,6 +53,30 @@ export interface SimulationErstellen {
   schritte: number;
   variable: Record<string, unknown>;
   dual_modus: boolean;
+  plattform_modus?: boolean;
+}
+
+export interface FeedReaktion {
+  typ: 'like' | 'antwort' | 'repost';
+  autor: string;
+  inhalt: string | null;
+  schritt_nr: number;
+}
+
+export interface FeedBeitrag {
+  id: number;
+  welt: 'kontrolle' | 'variante';
+  autor: string;
+  schritt_nr: number;
+  inhalt: string;
+  reaktionen: FeedReaktion[];
+}
+
+export interface Folge {
+  folger: string;
+  gefolgter: string;
+  schritt_nr: number;
+  welt: 'kontrolle' | 'variante';
 }
 
 export interface Nachricht {

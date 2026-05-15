@@ -18,6 +18,7 @@ const formular = reactive({
   schritte: 10,
   variableJson: '{}',
   dual_modus: true,
+  plattform_modus: false,
   ausgewaehlt: [] as string[],
 });
 
@@ -68,6 +69,7 @@ async function planen() {
     schritte: formular.schritte,
     variable,
     dual_modus: formular.dual_modus,
+    plattform_modus: formular.plattform_modus,
   });
 }
 </script>
@@ -85,10 +87,14 @@ async function planen() {
         <label class="etikett">{{ t('simulation.schritte') }}</label>
         <input v-model.number="formular.schritte" type="number" min="1" max="500" class="eingabe" />
       </div>
-      <div>
+      <div class="space-y-1">
         <label class="etikett">
           <input v-model="formular.dual_modus" type="checkbox" class="mr-2" />
           {{ t('simulation.dual_modus') }}
+        </label>
+        <label class="etikett">
+          <input v-model="formular.plattform_modus" type="checkbox" class="mr-2" />
+          {{ t('simulation.plattform_modus') }}
         </label>
       </div>
       <div class="md:col-span-2">

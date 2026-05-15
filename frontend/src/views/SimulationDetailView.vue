@@ -4,8 +4,9 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { simulationApi } from '@/api/simulation';
-import type { Simulation, SimulationSchritt } from '@/api/typen';
+import type { FeedBeitrag, Folge, Simulation, SimulationSchritt } from '@/api/typen';
 import { abonniereSimulation } from '@/api/websocket';
+import FeedAnzeige from '@/components/FeedAnzeige.vue';
 import VergleichsAnsicht from '@/components/VergleichsAnsicht.vue';
 import { useToastStore } from '@/store/toasts';
 
@@ -15,7 +16,9 @@ const toasts = useToastStore();
 
 const sim = ref<Simulation | null>(null);
 const ladend = ref(true);
-const ansicht = ref<'spalten' | 'vergleich'>('spalten');
+const ansicht = ref<'spalten' | 'vergleich' | 'feed'>('spalten');
+const feed = ref<FeedBeitrag[]>([]);
+const folgen = ref<Folge[]>([]);
 let abbrechen: (() => void) | null = null;
 
 const id = computed(() => route.params.id as string);
@@ -37,6 +40,13 @@ const fortschritt = computed(() => {
 async function laden() {
   try {
     sim.value = await simulationApi.hole(id.value);
+    if (sim.value?.plattform_modus) {
+      [feed.value, folgen.value] = await Promise.all([
+        simulationApi.feed(id.value),
+        simulationApi.folgen(id.value),
+      ]);
+      ansicht.value = 'feed';
+    }
   } catch {
     toasts.fehler('Simulation nicht gefunden.');
   } finally {
@@ -137,8 +147,9 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <div v-if="sim.dual_modus" class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
       <button
+        v-if="sim.dual_modus"
         class="knopf-sekundaer text-xs"
         :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'spalten' }"
         @click="ansicht = 'spalten'"
@@ -146,15 +157,42 @@ onUnmounted(() => {
         Spalten
       </button>
       <button
+        v-if="sim.dual_modus"
         class="knopf-sekundaer text-xs"
         :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'vergleich' }"
         @click="ansicht = 'vergleich'"
       >
         {{ t('simulation.vergleich') }}
       </button>
+      <button
+        v-if="sim.plattform_modus"
+        class="knopf-sekundaer text-xs"
+        :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'feed' }"
+        @click="ansicht = 'feed'"
+      >
+        Feed
+      </button>
     </div>
 
-    <article v-if="sim.dual_modus && ansicht === 'vergleich'" class="karte overflow-x-auto">
+    <article v-if="sim.plattform_modus && ansicht === 'feed'" class="space-y-4">
+      <div v-if="sim.dual_modus" class="grid gap-4 lg:grid-cols-2">
+        <div class="karte">
+          <h3 class="mb-3 text-sm font-semibold uppercase text-slate-500">Kontroll-Welt</h3>
+          <FeedAnzeige :feed="feed" :folgen="folgen" welt="kontrolle" />
+        </div>
+        <div class="karte">
+          <h3 class="mb-3 text-sm font-semibold uppercase text-markenblau-700 dark:text-markenblau-500">
+            Varianten-Welt
+          </h3>
+          <FeedAnzeige :feed="feed" :folgen="folgen" welt="variante" />
+        </div>
+      </div>
+      <div v-else class="karte">
+        <FeedAnzeige :feed="feed" :folgen="folgen" />
+      </div>
+    </article>
+
+    <article v-else-if="sim.dual_modus && ansicht === 'vergleich'" class="karte overflow-x-auto">
       <p v-if="Object.keys(sim.variable).length" class="mb-3 text-xs text-slate-500">
         Variable: <code>{{ JSON.stringify(sim.variable) }}</code>
       </p>
