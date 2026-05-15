@@ -7,6 +7,8 @@ export const agentenApi = {
   erstelle: (eingabe: AgentErstellen) =>
     apiClient.post<Agent>('/api/agenten', eingabe).then((r) => r.data),
   loesche: (id: string) => apiClient.delete<void>(`/api/agenten/${id}`).then((r) => r.data),
+  aktualisiere: (id: string, persona: Persona) =>
+    apiClient.put<Agent>(`/api/agenten/${id}`, persona).then((r) => r.data),
   personaAusSaat: (saat: Record<string, string>) =>
     apiClient.post<Persona>('/api/agenten/aus-saat', { saat }).then((r) => r.data),
 };

@@ -43,6 +43,18 @@ async def hole(
     return sim
 
 
+@router.get("/{sim_id}/export")
+async def exportiere(
+    sim_id: str,
+    dienst: SimulationDienst = Depends(hole_simulation_dienst),
+) -> dict:
+    """Liefert Simulation samt Verlauf als JSON — perfekt zum Archivieren."""
+    sim = await dienst.hole(sim_id)
+    if sim is None:
+        raise HTTPException(status_code=404, detail="Simulation nicht gefunden")
+    return sim.model_dump(mode="json")
+
+
 @router.post("/{sim_id}/starte", response_model=Simulation)
 async def starte(
     sim_id: str,

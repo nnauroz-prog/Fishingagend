@@ -49,6 +49,18 @@ async def hole_agent(agent_id: str, dienst: AgentDienst = Depends(hole_agent_die
     return agent
 
 
+@router.put("/{agent_id}", response_model=Agent)
+async def aktualisiere_agent(
+    agent_id: str,
+    persona: Persona,
+    dienst: AgentDienst = Depends(hole_agent_dienst),
+) -> Agent:
+    agent = await dienst.aktualisiere_persona(agent_id, persona)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Agent nicht gefunden")
+    return agent
+
+
 @router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def loesche_agent(agent_id: str, dienst: AgentDienst = Depends(hole_agent_dienst)) -> None:
     if not await dienst.loesche(agent_id):

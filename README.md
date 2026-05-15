@@ -4,8 +4,9 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
-![Backend tests](https://img.shields.io/badge/backend%20tests-17%2F17%20%E2%9C%93-success)
-![Frontend tests](https://img.shields.io/badge/frontend%20tests-12%2F12%20%E2%9C%93-success)
+![Backend tests](https://img.shields.io/badge/backend%20tests-30%2F30%20%E2%9C%93-success)
+![Frontend tests](https://img.shields.io/badge/frontend%20tests-18%2F18%20%E2%9C%93-success)
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
 ## Architektur
 
@@ -134,25 +135,44 @@ Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. T
 
 ## API-Übersicht
 
-| Methode | Pfad                              | Beschreibung                                |
-|---------|-----------------------------------|---------------------------------------------|
-| GET     | `/api/zustand`                    | Health-Check                                |
-| GET     | `/api/agenten`                    | Liste aller Agenten                         |
-| POST    | `/api/agenten`                    | Agent anlegen                               |
-| GET     | `/api/agenten/{id}`               | Agent abrufen                               |
-| DELETE  | `/api/agenten/{id}`               | Agent löschen                               |
-| POST    | `/api/agenten/aus-saat`           | Persona-Vorschlag via LLM                   |
-| POST    | `/api/chat`                       | Chat (Antwort als JSON)                     |
-| POST    | `/api/chat/strom`                 | Chat (SSE-Streaming)                        |
-| GET     | `/api/simulation`                 | Simulationen auflisten                      |
-| POST    | `/api/simulation`                 | Simulation planen                           |
-| GET     | `/api/simulation/{id}`            | Simulation samt Verlauf                     |
-| POST    | `/api/simulation/{id}/starte`     | Starten (Hintergrund; `?sofort=true` synchron) |
-| GET     | `/api/berichte/{id}`              | Markdown-Bericht                            |
-| POST    | `/api/graphrag/extrahieren`       | Entitäten + Beziehungen extrahieren         |
-| POST    | `/api/graphrag/abfrage`           | Wissensgraph befragen                       |
+| Methode      | Pfad                                       | Beschreibung                                |
+|--------------|--------------------------------------------|---------------------------------------------|
+| `GET`        | `/api/zustand`                             | Health-Check                                |
+| `GET`        | `/api/statistiken`                         | Aggregierte Zähler fürs Dashboard           |
+| `GET`        | `/api/agenten?limit&offset`                | Liste (paginierbar)                         |
+| `POST`       | `/api/agenten`                             | Agent anlegen                               |
+| `GET`        | `/api/agenten/{id}`                        | Agent abrufen                               |
+| `PUT`        | `/api/agenten/{id}`                        | Persona aktualisieren                       |
+| `DELETE`     | `/api/agenten/{id}`                        | Agent löschen                               |
+| `POST`       | `/api/agenten/aus-saat`                    | Persona-Vorschlag via LLM                   |
+| `POST`       | `/api/chat`                                | Chat (JSON-Antwort)                         |
+| `POST`       | `/api/chat/strom`                          | Chat (SSE-Streaming)                        |
+| `GET`        | `/api/simulation?limit&offset`             | Liste (paginierbar)                         |
+| `POST`       | `/api/simulation`                          | Simulation planen                           |
+| `GET`        | `/api/simulation/{id}`                     | Simulation samt Verlauf                     |
+| `GET`        | `/api/simulation/{id}/export`              | Vollständiger JSON-Export                   |
+| `POST`       | `/api/simulation/{id}/starte?sofort`       | Starten (Hintergrund; `sofort=true` synchron) |
+| `WS`         | `/api/simulation/{id}/strom`               | Live-Push: status- und schritt-Events       |
+| `GET`        | `/api/berichte/{id}`                       | Markdown-Bericht                            |
+| `POST`       | `/api/graphrag/extrahieren`                | Entitäten + Beziehungen extrahieren         |
+| `GET`        | `/api/graphrag/graph`                      | Aktueller Wissensgraph                      |
+| `DELETE`     | `/api/graphrag/graph`                      | Wissensgraph leeren                         |
+| `POST`       | `/api/graphrag/abfrage`                    | Wissensgraph in natürlicher Sprache befragen |
 
 Vollständige OpenAPI-Doku unter `/docs`.
+
+## Frontend-Routen
+
+| Pfad                       | Inhalt                                                  |
+|----------------------------|---------------------------------------------------------|
+| `/`                        | Dashboard mit Live-Statistiken und Modul-Übersicht      |
+| `/agenten`                 | Liste mit Suche, Persona-Vorschlag                      |
+| `/agenten/:id`             | Detail + Bearbeiten                                     |
+| `/chat/:agentId?`          | Chat mit SSE-Streaming und Abbrechen                    |
+| `/simulation`              | Liste mit Suche + Status-Filter                         |
+| `/simulation/:id`          | Live-Verlauf via WebSocket, Spalten- und Vergleichsansicht, JSON-Export |
+| `/graphrag`                | Extraktion, interaktive SVG-Visualisierung, Abfrage     |
+| `/berichte`                | Markdown-Berichte mit Druck-/PDF-Export                 |
 
 ## Lizenz
 

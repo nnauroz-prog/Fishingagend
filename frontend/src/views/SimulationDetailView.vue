@@ -51,6 +51,17 @@ async function starte() {
   await laden();
 }
 
+function exportJson() {
+  if (!sim.value) return;
+  const blob = new Blob([JSON.stringify(sim.value, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `simulation-${sim.value.name.replace(/\s+/g, '-')}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function verbinde() {
   abbrechen?.();
   abbrechen = abonniereSimulation(id.value, (e) => {
@@ -191,12 +202,17 @@ onUnmounted(() => {
       </article>
     </div>
 
-    <RouterLink
-      v-if="sim.status === 'abgeschlossen'"
-      to="/berichte"
-      class="knopf-sekundaer inline-block"
-    >
-      → {{ t('berichte.titel') }}
-    </RouterLink>
+    <div class="flex gap-2">
+      <RouterLink
+        v-if="sim.status === 'abgeschlossen'"
+        to="/berichte"
+        class="knopf-sekundaer"
+      >
+        → {{ t('berichte.titel') }}
+      </RouterLink>
+      <button class="knopf-sekundaer text-xs" @click="exportJson">
+        ⬇ JSON
+      </button>
+    </div>
   </section>
 </template>

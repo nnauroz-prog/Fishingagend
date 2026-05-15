@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -16,6 +16,15 @@ const toasts = useToastStore();
 
 const agent = ref<Agent | null>(null);
 const ladend = ref(false);
+const bearbeiten = ref(false);
+const formular = reactive({
+  name: '',
+  beruf: '',
+  hintergrund: '',
+  werte: '',
+  charakterzuege: '',
+  sprachstil: 'neutral',
+});
 
 const id = computed(() => route.params.id as string);
 
@@ -30,6 +39,33 @@ onMounted(async () => {
     ladend.value = false;
   }
 });
+
+function bearbeitenStarten() {
+  if (!agent.value) return;
+  formular.name = agent.value.persona.name;
+  formular.beruf = agent.value.persona.beruf ?? '';
+  formular.hintergrund = agent.value.persona.hintergrund;
+  formular.werte = agent.value.persona.werte.join(', ');
+  formular.charakterzuege = agent.value.persona.charakterzuege.join(', ');
+  formular.sprachstil = agent.value.persona.sprachstil;
+  bearbeiten.value = true;
+}
+
+async function speichern() {
+  if (!agent.value) return;
+  const persona = {
+    ...agent.value.persona,
+    name: formular.name.trim(),
+    beruf: formular.beruf.trim() || null,
+    hintergrund: formular.hintergrund.trim(),
+    werte: formular.werte.split(',').map((w) => w.trim()).filter(Boolean),
+    charakterzuege: formular.charakterzuege.split(',').map((w) => w.trim()).filter(Boolean),
+    sprachstil: formular.sprachstil,
+  };
+  agent.value = await agentenApi.aktualisiere(agent.value.id, persona);
+  bearbeiten.value = false;
+  toasts.erfolg('Agent gespeichert.');
+}
 
 async function loeschen() {
   if (!agent.value) return;
@@ -55,9 +91,47 @@ async function loeschen() {
         <RouterLink :to="`/chat/${agent.id}`" class="knopf-primaer">
           {{ t('navigation.chat') }}
         </RouterLink>
+        <button class="knopf-sekundaer" @click="bearbeitenStarten">
+          {{ t('agenten.bearbeiten') }}
+        </button>
         <button class="knopf-sekundaer" @click="loeschen">{{ t('agenten.loeschen') }}</button>
       </div>
     </header>
+
+    <form v-if="bearbeiten" class="karte space-y-3" @submit.prevent="speichern">
+      <div>
+        <label class="etikett">{{ t('agenten.name') }}</label>
+        <input v-model="formular.name" class="eingabe" required />
+      </div>
+      <div>
+        <label class="etikett">{{ t('agenten.beruf') }}</label>
+        <input v-model="formular.beruf" class="eingabe" />
+      </div>
+      <div>
+        <label class="etikett">{{ t('agenten.hintergrund') }}</label>
+        <textarea v-model="formular.hintergrund" rows="3" class="eingabe" />
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="etikett">{{ t('agenten.werte') }}</label>
+          <input v-model="formular.werte" class="eingabe" />
+        </div>
+        <div>
+          <label class="etikett">Charakterzüge</label>
+          <input v-model="formular.charakterzuege" class="eingabe" />
+        </div>
+      </div>
+      <div>
+        <label class="etikett">Sprachstil</label>
+        <input v-model="formular.sprachstil" class="eingabe" />
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="knopf-primaer">{{ t('agenten.speichern') }}</button>
+        <button type="button" class="knopf-sekundaer" @click="bearbeiten = false">
+          {{ t('agenten.abbrechen') }}
+        </button>
+      </div>
+    </form>
 
     <div class="grid gap-4 md:grid-cols-2">
       <article class="karte">
