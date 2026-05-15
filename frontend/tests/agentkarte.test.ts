@@ -1,11 +1,20 @@
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createMemoryHistory, createRouter } from 'vue-router';
 import { describe, expect, it } from 'vitest';
 
 import AgentKarte from '@/components/AgentKarte.vue';
 import de from '@/i18n/de.json';
 
 const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } });
+
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [
+    { path: '/', component: { template: '<div />' } },
+    { path: '/agenten/:id', name: 'agent-detail', component: { template: '<div />' } },
+  ],
+});
 
 const beispielAgent = {
   id: 'abc-123',
@@ -27,7 +36,7 @@ describe('AgentKarte', () => {
   it('zeigt Name und Beruf an', () => {
     const w = mount(AgentKarte, {
       props: { agent: beispielAgent },
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n, router] },
     });
     expect(w.text()).toContain('Lisa Weber');
     expect(w.text()).toContain('Klimawissenschaftlerin');
@@ -36,9 +45,10 @@ describe('AgentKarte', () => {
   it('löst loeschen-Event mit Agent-ID aus', async () => {
     const w = mount(AgentKarte, {
       props: { agent: beispielAgent },
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n, router] },
     });
-    await w.find('button:nth-child(2)').trigger('click');
+    const knoepfe = w.findAll('button');
+    await knoepfe[knoepfe.length - 1].trigger('click');
     expect(w.emitted('loeschen')?.[0]).toEqual(['abc-123']);
   });
 });
