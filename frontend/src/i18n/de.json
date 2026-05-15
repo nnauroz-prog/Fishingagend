@@ -13,7 +13,18 @@
     "graphrag": "Wissensgraph",
     "berichte": "Berichte",
     "einstellungen": "Einstellungen",
+    "audit": "Audit-Log",
     "thema_wechseln": "Thema wechseln"
+  },
+  "audit": {
+    "titel": "Audit-Log",
+    "einleitung": "Alle schreibenden Aktionen mit Zeitstempel und Details — chronologisch absteigend.",
+    "alle": "Alle Ressourcen",
+    "leer": "Noch keine Einträge.",
+    "zeit": "Zeit",
+    "aktion": "Aktion",
+    "ressource": "Ressource",
+    "details": "Details"
   },
   "einstellungen": {
     "titel": "Einstellungen",

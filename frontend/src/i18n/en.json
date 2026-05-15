@@ -13,7 +13,18 @@
     "graphrag": "Knowledge graph",
     "berichte": "Reports",
     "einstellungen": "Settings",
+    "audit": "Audit log",
     "thema_wechseln": "Toggle theme"
+  },
+  "audit": {
+    "titel": "Audit log",
+    "einleitung": "All write actions with timestamp and details — newest first.",
+    "alle": "All resources",
+    "leer": "No entries yet.",
+    "zeit": "Time",
+    "aktion": "Action",
+    "ressource": "Resource",
+    "details": "Details"
   },
   "einstellungen": {
     "titel": "Settings",

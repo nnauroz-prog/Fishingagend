@@ -148,6 +148,19 @@ class PlattformFolgtZeile(Basis):
     schritt_nr: Mapped[int] = mapped_column()
 
 
+class AuditZeile(Basis):
+    """Schreibende Aktionen werden hier mit Zeitstempel und Details abgelegt."""
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    zeitstempel: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    aktion: Mapped[str] = mapped_column(String(80), index=True)
+    ressource: Mapped[str] = mapped_column(String(80), index=True)
+    ressource_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 def _kodiere(wert: Any) -> str:
     return json.dumps(wert, ensure_ascii=False)
 

@@ -53,6 +53,12 @@ class Einstellungen(BaseSettings):
     # Demo
     demo_daten_einspielen: bool = True
 
+    # Lernen
+    werte_drift_aktiv: bool = Field(
+        default=False,
+        description="Wenn aktiv: Persona.werte/charakterzuege werden nach Sims dezent angepasst",
+    )
+
     @property
     def cors_liste(self) -> list[str]:
         return [u.strip() for u in self.cors_urspruenge.split(",") if u.strip()]

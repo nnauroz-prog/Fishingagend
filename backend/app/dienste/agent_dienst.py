@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.datenbank import AgentZeile, session_factory
+from app.dienste.audit_dienst import schreibe as audit_schreibe
 from app.modelle.agent import Agent, AgentErstellen
 from app.modelle.persona import Persona
 
@@ -44,7 +45,14 @@ class AgentDienst:
             session.add(zeile)
             await session.commit()
             await session.refresh(zeile)
-            return _zu_agent(zeile)
+            agent = _zu_agent(zeile)
+        await audit_schreibe(
+            "agent_erstellt",
+            "agent",
+            agent.id,
+            {"name": agent.persona.name},
+        )
+        return agent
 
     async def aktualisiere_persona(self, agent_id: str, persona: Persona) -> Agent | None:
         async with session_factory()() as session:
@@ -54,7 +62,11 @@ class AgentDienst:
             zeile.persona_json = persona.model_dump_json()
             await session.commit()
             await session.refresh(zeile)
-            return _zu_agent(zeile)
+            agent = _zu_agent(zeile)
+        await audit_schreibe(
+            "agent_aktualisiert", "agent", agent.id, {"name": persona.name}
+        )
+        return agent
 
     async def loesche(self, agent_id: str) -> bool:
         async with session_factory()() as session:
@@ -63,7 +75,8 @@ class AgentDienst:
                 return False
             await session.delete(zeile)
             await session.commit()
-            return True
+        await audit_schreibe("agent_geloescht", "agent", agent_id, None)
+        return True
 
 
 # Pro Prozess eine Instanz; sie ist zustandslos.

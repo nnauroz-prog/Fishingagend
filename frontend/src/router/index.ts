@@ -82,6 +82,12 @@ export const router = createRouter({
       meta: { titel: 'Einstellungen' },
     },
     {
+      path: '/audit',
+      name: 'audit',
+      component: () => import('@/views/AuditView.vue'),
+      meta: { titel: 'Audit-Log' },
+    },
+    {
       path: '/:pfad(.*)*',
       name: 'nicht-gefunden',
       component: () => import('@/views/NichtGefundenView.vue'),

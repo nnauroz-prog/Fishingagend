@@ -17,6 +17,7 @@ import json
 import re
 from collections import Counter
 
+from app.config import einstellungen
 from app.dienste.agent_dienst import hole_agent_dienst
 from app.dienste.gedaechtnis_dienst import hole_gedaechtnis_dienst
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
@@ -52,6 +53,20 @@ _KONSOLIDIERUNGS_SYSTEM = """Du verdichtest aelte Erinnerungen eines Agenten zu
 einer einzigen, kurzen Zusammenfassung (max. 4 Saetze). Behalte Personen,
 Ereignisse, Gefuehle. Antwort auf Deutsch."""
 
+_DRIFT_SYSTEM = """Du bist Charakter-Coach. Aus den Sim-Aktionen eines Agenten
+schlaegst du DEZENTE Anpassungen seiner Werte und Charakterzuege vor —
+hoechstens je einen Eintrag hinzufuegen ODER einen entfernen, niemals
+einen kompletten Umbau. Antwort als JSON:
+
+{
+  "werte_hinzu": ["neuer Wert"],
+  "werte_weg": ["alter Wert"],
+  "charakterzuege_hinzu": ["neuer Zug"],
+  "charakterzuege_weg": ["alter Zug"]
+}
+
+Leere Listen sind ok. Kein Erfinden ausserhalb der Sim."""
+
 
 class LernDienst:
     def __init__(self, llm: LLMSchnittstelle | None = None) -> None:
@@ -71,32 +86,82 @@ class LernDienst:
         # Nur Agenten, die in dieser Sim teilgenommen haben
         teilnehmer = [a for a in agenten if a.id in sim.agent_ids]
 
-        zaehler = {"beziehungen": 0, "konsolidierungen": 0, "reflexionen": 0}
+        zaehler = {"beziehungen": 0, "konsolidierungen": 0, "reflexionen": 0, "drift": 0}
 
         for agent in teilnehmer:
-            # 1. Reflexion ins Gedaechtnis
             try:
                 if await self._schreibe_reflexion(agent, sim):
                     zaehler["reflexionen"] += 1
             except Exception:
                 logger.warning("reflexion_fehlgeschlagen", agent_id=agent.id)
 
-            # 2. Beziehungen lernen — Persona aktualisieren
             try:
                 if await self._aktualisiere_beziehungen(agent, sim):
                     zaehler["beziehungen"] += 1
             except Exception:
                 logger.warning("beziehungen_fehlgeschlagen", agent_id=agent.id)
 
-            # 3. Konsolidierung bei zu vielen Episoden
             try:
                 if await self._konsolidiere_falls_noetig(agent.id):
                     zaehler["konsolidierungen"] += 1
             except Exception:
                 logger.warning("konsolidierung_fehlgeschlagen", agent_id=agent.id)
 
+            if einstellungen.werte_drift_aktiv:
+                try:
+                    if await self._werte_drift(agent, sim):
+                        zaehler["drift"] += 1
+                except Exception:
+                    logger.warning("drift_fehlgeschlagen", agent_id=agent.id)
+
         logger.info("lernen_abgeschlossen", **zaehler)
         return zaehler
+
+    async def _werte_drift(self, agent: Agent, sim: Simulation) -> bool:
+        """Dezente Anpassung der Werte/Charakterzuege — opt-in via env."""
+        eigene = [
+            e for s in sim.verlauf for e in s.ereignisse
+            if e.lower().startswith(agent.persona.name.lower() + ":")
+        ][:20]
+        if not eigene:
+            return False
+
+        anweisung = (
+            f"Agent: {agent.persona.name}\n"
+            f"Aktuelle Werte: {agent.persona.werte}\n"
+            f"Aktuelle Charakterzuege: {agent.persona.charakterzuege}\n"
+            f"Sim-Aktionen:\n" + "\n".join(f"- {a}" for a in eigene)
+        )
+        roh = await self._llm.antworte_json(_DRIFT_SYSTEM, anweisung, max_token=400)
+        hinzu_w = [str(x).strip() for x in roh.get("werte_hinzu", []) if x][:1]
+        weg_w = [str(x).strip() for x in roh.get("werte_weg", []) if x][:1]
+        hinzu_c = [str(x).strip() for x in roh.get("charakterzuege_hinzu", []) if x][:1]
+        weg_c = [str(x).strip() for x in roh.get("charakterzuege_weg", []) if x][:1]
+
+        if not (hinzu_w or weg_w or hinzu_c or weg_c):
+            return False
+
+        neue_werte = [w for w in agent.persona.werte if w not in weg_w] + [
+            w for w in hinzu_w if w not in agent.persona.werte
+        ]
+        neue_zuege = [c for c in agent.persona.charakterzuege if c not in weg_c] + [
+            c for c in hinzu_c if c not in agent.persona.charakterzuege
+        ]
+        if (
+            neue_werte == agent.persona.werte
+            and neue_zuege == agent.persona.charakterzuege
+        ):
+            return False
+
+        neue_persona = Persona(
+            **{
+                **agent.persona.model_dump(),
+                "werte": neue_werte,
+                "charakterzuege": neue_zuege,
+            }
+        )
+        await hole_agent_dienst().aktualisiere_persona(agent.id, neue_persona)
+        return True
 
     # ---------- Reflexion ----------
     async def _schreibe_reflexion(self, agent: Agent, sim: Simulation) -> bool:

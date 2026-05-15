@@ -17,6 +17,7 @@ from app.datenbank import (
     kodiere_json,
     session_factory,
 )
+from app.dienste.audit_dienst import schreibe as audit_schreibe
 from app.dienste.ereignis_bus import hole_ereignis_bus
 from app.dienste.gedaechtnis_dienst import hole_gedaechtnis_dienst
 from app.dienste.lern_dienst import hole_lern_dienst
@@ -78,7 +79,14 @@ class SimulationDienst:
             session.add(zeile)
             await session.commit()
             await session.refresh(zeile)
-            return await self._zu_modell(session, zeile)
+            sim = await self._zu_modell(session, zeile)
+        await audit_schreibe(
+            "sim_geplant",
+            "simulation",
+            sim.id,
+            {"name": sim.name, "schritte": sim.schritte, "agenten": len(sim.agent_ids)},
+        )
+        return sim
 
     async def starte(self, sim_id: str) -> Simulation | None:
         sim = await self.hole(sim_id)
@@ -133,6 +141,7 @@ class SimulationDienst:
 
     # -------- Hilfen --------
     async def _setze_status(self, sim_id: str, status: SimulationStatus) -> None:
+        await audit_schreibe(f"sim_{status.value}", "simulation", sim_id, None)
         async with session_factory()() as session:
             zeile = await session.get(SimulationZeile, sim_id)
             if zeile:
