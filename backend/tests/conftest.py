@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.config import einstellungen
 from app.datenbank import initialisiere_datenbank, setze_datenbank_url
 from app.dienste.llm_dienst import MockLLMDienst, setze_llm_dienst
 from app.dienste.simulation_dienst import setze_simulation_dienst
@@ -17,9 +18,12 @@ from app.main import app
 async def isolierte_datenbank(tmp_path: Path):
     db_pfad = tmp_path / "test.db"
     setze_datenbank_url(f"sqlite+aiosqlite:///{db_pfad}")
+    vorher = einstellungen.demo_daten_einspielen
+    einstellungen.demo_daten_einspielen = False
     await initialisiere_datenbank()
     yield
     setze_datenbank_url("sqlite+aiosqlite:///./data/fishingagend.db")
+    einstellungen.demo_daten_einspielen = vorher
 
 
 @pytest.fixture

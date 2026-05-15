@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { agentenApi } from '@/api/agenten';
 import AgentKarte from '@/components/AgentKarte.vue';
+import Suchfeld from '@/components/Suchfeld.vue';
 import { useAgentenStore } from '@/store/agenten';
 
 const { t } = useI18n();
@@ -13,6 +14,25 @@ const store = useAgentenStore();
 
 const formularSichtbar = ref(false);
 const vorschlaegt = ref(false);
+const suche = ref('');
+
+const gefiltert = computed(() => {
+  const q = suche.value.trim().toLowerCase();
+  if (!q) return store.agenten;
+  return store.agenten.filter((a) => {
+    const blob = [
+      a.persona.name,
+      a.persona.beruf,
+      a.persona.hintergrund,
+      a.persona.werte.join(' '),
+      a.persona.charakterzuege.join(' '),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return blob.includes(q);
+  });
+});
 const formular = reactive({
   saat: '',
   name: '',
@@ -120,12 +140,15 @@ function zumChat(agentId: string) {
       </div>
     </form>
 
+    <Suchfeld v-if="store.agenten.length" v-model="suche" :platzhalter="t('agenten.suchen')" />
+
     <p v-if="store.ladend" class="text-sm text-slate-500">…</p>
     <p v-else-if="!store.agenten.length" class="text-sm text-slate-500">{{ t('agenten.leer') }}</p>
+    <p v-else-if="!gefiltert.length" class="text-sm text-slate-500">{{ t('agenten.kein_treffer') }}</p>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <AgentKarte
-        v-for="agent in store.agenten"
+        v-for="agent in gefiltert"
         :key="agent.id"
         :agent="agent"
         @loeschen="(id) => store.loeschen(id)"

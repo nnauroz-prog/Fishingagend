@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { simulationApi } from '@/api/simulation';
-import type { Simulation, SimulationSchritt } from '@/api/typen';
+import type { Simulation } from '@/api/typen';
+import VergleichsAnsicht from '@/components/VergleichsAnsicht.vue';
 import { useToastStore } from '@/store/toasts';
 
 const route = useRoute();
@@ -13,6 +14,7 @@ const toasts = useToastStore();
 
 const sim = ref<Simulation | null>(null);
 const ladend = ref(true);
+const ansicht = ref<'spalten' | 'vergleich'>('spalten');
 let timer: ReturnType<typeof setInterval> | null = null;
 
 const id = computed(() => route.params.id as string);
@@ -104,7 +106,31 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <div class="grid gap-4" :class="sim.dual_modus ? 'lg:grid-cols-2' : ''">
+    <div v-if="sim.dual_modus" class="flex gap-2">
+      <button
+        class="knopf-sekundaer text-xs"
+        :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'spalten' }"
+        @click="ansicht = 'spalten'"
+      >
+        Spalten
+      </button>
+      <button
+        class="knopf-sekundaer text-xs"
+        :class="{ 'bg-markenblau-600 text-white hover:bg-markenblau-700': ansicht === 'vergleich' }"
+        @click="ansicht = 'vergleich'"
+      >
+        {{ t('simulation.vergleich') }}
+      </button>
+    </div>
+
+    <article v-if="sim.dual_modus && ansicht === 'vergleich'" class="karte overflow-x-auto">
+      <p v-if="Object.keys(sim.variable).length" class="mb-3 text-xs text-slate-500">
+        Variable: <code>{{ JSON.stringify(sim.variable) }}</code>
+      </p>
+      <VergleichsAnsicht :simulation="sim" />
+    </article>
+
+    <div v-else class="grid gap-4" :class="sim.dual_modus ? 'lg:grid-cols-2' : ''">
       <article class="karte">
         <h2 class="mb-3 text-sm font-semibold uppercase text-slate-500">Kontroll-Welt</h2>
         <ul class="space-y-2 text-sm">

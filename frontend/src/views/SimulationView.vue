@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import type { SimulationStatus } from '@/api/typen';
 import SimulationsAnzeige from '@/components/SimulationsAnzeige.vue';
+import Suchfeld from '@/components/Suchfeld.vue';
 import { useAgentenStore } from '@/store/agenten';
 import { useSimulationStore } from '@/store/simulation';
 
@@ -20,6 +22,17 @@ const formular = reactive({
 });
 
 const fehler = ref<string | null>(null);
+const suche = ref('');
+const statusFilter = ref<SimulationStatus | ''>('');
+
+const gefiltert = computed(() => {
+  const q = suche.value.trim().toLowerCase();
+  return sims.simulationen.filter((s) => {
+    if (statusFilter.value && s.status !== statusFilter.value) return false;
+    if (!q) return true;
+    return (s.name + ' ' + s.beschreibung).toLowerCase().includes(q);
+  });
+});
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -96,8 +109,19 @@ async function planen() {
       </div>
     </form>
 
+    <div v-if="sims.simulationen.length" class="flex flex-col gap-2 sm:flex-row">
+      <Suchfeld v-model="suche" :platzhalter="t('simulation.suchen')" class="flex-1" />
+      <select v-model="statusFilter" class="eingabe sm:w-56">
+        <option value="">{{ t('simulation.alle_status') }}</option>
+        <option value="geplant">{{ t('simulation.status_geplant') }}</option>
+        <option value="laeuft">{{ t('simulation.status_laeuft') }}</option>
+        <option value="abgeschlossen">{{ t('simulation.status_abgeschlossen') }}</option>
+        <option value="fehlgeschlagen">{{ t('simulation.status_fehlgeschlagen') }}</option>
+      </select>
+    </div>
+
     <div class="grid gap-4 md:grid-cols-2">
-      <div v-for="sim in sims.simulationen" :key="sim.id" class="space-y-2">
+      <div v-for="sim in gefiltert" :key="sim.id" class="space-y-2">
         <SimulationsAnzeige :simulation="sim" />
         <button
           v-if="sim.status === 'geplant'"

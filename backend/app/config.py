@@ -36,6 +36,9 @@ class Einstellungen(BaseSettings):
     max_agenten: int = 200
     simulations_schritte: int = 50
 
+    # Demo
+    demo_daten_einspielen: bool = True
+
     @property
     def cors_liste(self) -> list[str]:
         return [u.strip() for u in self.cors_urspruenge.split(",") if u.strip()]

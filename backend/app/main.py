@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import agenten, berichte, chat, graphrag, simulation, zustand
 from app.config import einstellungen
 from app.datenbank import initialisiere_datenbank
+from app.dienste.demo_dienst import saee_demo_daten
 from app.werkzeuge.logger import erstelle_logger
 
 logger = erstelle_logger(__name__)
@@ -20,6 +21,10 @@ logger = erstelle_logger(__name__)
 async def lebenszyklus(_app: FastAPI) -> AsyncIterator[None]:
     logger.info("starte_anwendung", modell=einstellungen.anthropic_modell)
     await initialisiere_datenbank()
+    if einstellungen.demo_daten_einspielen:
+        anzahl = await saee_demo_daten()
+        if anzahl:
+            logger.info("demo_daten_aktiv", neue_agenten=anzahl)
     yield
     logger.info("beende_anwendung")
 
