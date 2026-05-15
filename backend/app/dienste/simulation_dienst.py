@@ -18,6 +18,7 @@ from app.datenbank import (
     session_factory,
 )
 from app.dienste.ereignis_bus import hole_ereignis_bus
+from app.dienste.gedaechtnis_dienst import hole_gedaechtnis_dienst
 from app.dienste.llm_dienst import LLMSchnittstelle, hole_llm_dienst
 from app.dienste.plattform_dienst import hole_plattform_dienst
 from app.modelle.agent import Agent
@@ -158,6 +159,9 @@ class SimulationDienst:
             else ""
         )
 
+        gedaechtnis = hole_gedaechtnis_dienst()
+        name_zu_id = {a.persona.name: a.id for a in agenten}
+
         if plattform_modus:
             ergebnisse = await self._plattform_schritt(
                 sim_id, welt, nummer, agenten, variablen_block
@@ -187,6 +191,20 @@ class SimulationDienst:
                 return f"{agent.persona.name}: {antwort.text.strip()}"
 
             ergebnisse = await asyncio.gather(*(_einzelaktion(a) for a in agenten))
+
+        # Temporale Memory-Updates: jede Aktion landet im Langzeit-Gedaechtnis
+        # des handelnden Agenten — so weiss er beim spaeteren Chat noch, was
+        # er in welcher Welt getan hat.
+        for eintrag in ergebnisse:
+            if ":" in eintrag:
+                name = eintrag.split(":", 1)[0].strip()
+                aid = name_zu_id.get(name)
+                if aid:
+                    await gedaechtnis.merke(
+                        aid,
+                        f"[Sim {sim_id[:6]}/{welt}/Schritt {nummer}] {eintrag}",
+                    )
+
         schritt = SimulationSchritt(nummer=nummer, welt=welt, ereignisse=ergebnisse)  # type: ignore[arg-type]
 
         async with session_factory()() as session:

@@ -4,7 +4,7 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
-![Backend tests](https://img.shields.io/badge/backend%20tests-30%2F30%20%E2%9C%93-success)
+![Backend tests](https://img.shields.io/badge/backend%20tests-39%2F39%20%E2%9C%93-success)
 ![Frontend tests](https://img.shields.io/badge/frontend%20tests-18%2F18%20%E2%9C%93-success)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 
@@ -14,7 +14,7 @@ Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert e
 |---------------|--------------------------------------------------------------------|
 | Backend       | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2 (Async), Alembic, `uv` |
 | Frontend      | Vue 3, Vite, TypeScript, Tailwind CSS + Typography, Pinia, Vue Router, Vue I18n, marked |
-| LLM           | Anthropic Claude (`claude-opus-4-7`) — mit Prompt-Caching und Streaming |
+| LLM           | Anthropic Claude (`claude-opus-4-7`) **oder** OpenAI-kompatibel (Qwen, Ollama, vLLM ...) |
 | Persistenz    | SQLite (Standard), tauschbar gegen PostgreSQL via `DATENBANK_URL`  |
 | Container     | Docker, Docker Compose (Dev + Prod mit Nginx)                      |
 | CI            | GitHub Actions (Ruff, pytest, Vitest, Build)                       |
@@ -110,6 +110,16 @@ npm run dev
 └── .github/workflows/ci.yml CI-Pipeline
 ```
 
+## Die fünf Phasen (wie MiroFish)
+
+Fishingagend bildet den vollständigen MiroFish-Workflow ab — über die `/pipeline`-Seite oder per API:
+
+1. **Graph-Aufbau** — Saat-Texte werden in Chunks zerlegt, das LLM extrahiert Entitäten und Beziehungen, alles wird dedupliziert in der DB persistiert.
+2. **Umgebungs-Setup** — aus den Personen-Entitäten erzeugt das LLM ausformulierte Personas und legt sie als Agenten an (`POST /api/agenten/aus-graph`).
+3. **Simulation** — Dual-Welt-Lauf (Kontroll- + Variantenwelt parallel). Zwei Modi: *frei* (jeder Agent beschreibt eine Aktion) und *Plattform* (Posten/Reagieren/Folgen wie ein soziales Netzwerk).
+4. **Berichts-Generierung** — der ReportAgent ruft selbständig Werkzeuge auf (Statistik, Welt-Vergleich, Suche, Zeitraum, Agent-Aktionen) und liefert einen Markdown-Bericht.
+5. **Tiefe Interaktion** — Chat mit jedem simulierten Agenten (mit Sim-Memory!) **und** Chat mit dem ReportAgent über die abgeschlossene Sim.
+
 ## Module
 
 ### GraphRAG-Aufbau und Entitäts-Extraktion
@@ -130,8 +140,20 @@ Direktes Gespräch mit einem simulierten Agenten — Antwort kommt zeichenweise 
 ### Persistenz
 SQLAlchemy mit Async-SQLite; PostgreSQL via `DATENBANK_URL` umstellbar. Schema-Verwaltung über Alembic — `alembic upgrade head` oder `make migrate`.
 
+### Plattform-Simulation (sozial)
+Im `plattform_modus` läuft jeder Schritt sequentiell: jeder Agent wählt zwischen *posten*, *reagieren* (like/antwort/repost), *folgen* oder *nichts*. Spätere Agenten sehen frische Posts früherer Agenten — wie ein echtes soziales Netzwerk. Posts/Reaktionen/Folgen landen in eigenen Tabellen, Frontend zeigt einen klassischen Feed (Avatar, Reaktions-Icons, Folge-Liste).
+
+### Temporale Memory-Updates
+Jede Aktion in einer Sim landet automatisch im Langzeit-Gedächtnis des handelnden Agenten (Format: `[Sim XXX/welt/Schritt N] ...`). Beim späteren Chat erinnert sich der Agent an seine Sim-Erlebnisse. Memory ist auch direkt befüllbar via `POST /api/agenten/{id}/gedaechtnis`.
+
+### Anforderungs-Parsing
+`POST /api/simulation/aus-text` nimmt eine freie Beschreibung (*„Diskussion zur CO2-Reduktion mit Wissenschaftlerin und Bürgermeister, 5 Schritte"*) und gibt eine vollständige `SimulationErstellen`-Konfiguration zurück. Im Frontend füllt ein Klick das Formular vor.
+
+### Multi-Provider-LLM
+`LLM_PROVIDER=anthropic|openai`. OpenAI-Adapter funktioniert mit OpenAI selbst, Alibaba Qwen (Bailian, MiroFish-Standard), Ollama, vLLM, LocalAI — alles, was das OpenAI-Chat-API spricht. Sichtbar unter `/einstellungen`.
+
 ### Mock-LLM für Entwicklung & Tests
-Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — die App ist damit ohne API-Key komplett benutzbar.
+Ohne API-Key startet die App mit einem deterministischen Mock-LLM. Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — die App ist damit ohne API-Key komplett klickbar.
 
 ## API-Übersicht
 
@@ -144,20 +166,27 @@ Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. T
 | `GET`        | `/api/agenten/{id}`                        | Agent abrufen                               |
 | `PUT`        | `/api/agenten/{id}`                        | Persona aktualisieren                       |
 | `DELETE`     | `/api/agenten/{id}`                        | Agent löschen                               |
-| `POST`       | `/api/agenten/aus-saat`                    | Persona-Vorschlag via LLM                   |
+| `POST`       | `/api/agenten/aus-saat`                    | Persona-Vorschlag aus Stichworten           |
+| `POST`       | `/api/agenten/aus-graph`                   | **Phase 2:** Personas aus Wissensgraph erzeugen |
+| `GET/POST`   | `/api/agenten/{id}/gedaechtnis`            | **Memory-Injection** & lesen                |
 | `POST`       | `/api/chat`                                | Chat (JSON-Antwort)                         |
 | `POST`       | `/api/chat/strom`                          | Chat (SSE-Streaming)                        |
 | `GET`        | `/api/simulation?limit&offset`             | Liste (paginierbar)                         |
 | `POST`       | `/api/simulation`                          | Simulation planen                           |
+| `POST`       | `/api/simulation/aus-text`                 | **Anforderungs-Parsing**: Beschreibung → Konfig |
 | `GET`        | `/api/simulation/{id}`                     | Simulation samt Verlauf                     |
 | `GET`        | `/api/simulation/{id}/export`              | Vollständiger JSON-Export                   |
+| `GET`        | `/api/simulation/{id}/feed`                | **Plattform-Feed** (Posts + Reaktionen)     |
+| `GET`        | `/api/simulation/{id}/folgen`              | **Plattform-Folge-Beziehungen**             |
 | `POST`       | `/api/simulation/{id}/starte?sofort`       | Starten (Hintergrund; `sofort=true` synchron) |
 | `WS`         | `/api/simulation/{id}/strom`               | Live-Push: status- und schritt-Events       |
-| `GET`        | `/api/berichte/{id}`                       | Markdown-Bericht                            |
+| `GET`        | `/api/berichte/{id}`                       | Markdown-Bericht (Tool-Use)                 |
+| `POST`       | `/api/berichte/{id}/chat`                  | **Chat mit dem ReportAgent**                |
 | `POST`       | `/api/graphrag/extrahieren`                | Entitäten + Beziehungen extrahieren         |
 | `GET`        | `/api/graphrag/graph`                      | Aktueller Wissensgraph                      |
 | `DELETE`     | `/api/graphrag/graph`                      | Wissensgraph leeren                         |
 | `POST`       | `/api/graphrag/abfrage`                    | Wissensgraph in natürlicher Sprache befragen |
+| `GET`        | `/api/einstellungen`                       | Aktuelle Konfiguration (ohne Secrets)       |
 
 Vollständige OpenAPI-Doku unter `/docs`.
 
@@ -166,13 +195,15 @@ Vollständige OpenAPI-Doku unter `/docs`.
 | Pfad                       | Inhalt                                                  |
 |----------------------------|---------------------------------------------------------|
 | `/`                        | Dashboard mit Live-Statistiken und Modul-Übersicht      |
+| `/pipeline`                | **5-Phasen-Wizard** für den vollständigen Workflow      |
 | `/agenten`                 | Liste mit Suche, Persona-Vorschlag                      |
 | `/agenten/:id`             | Detail + Bearbeiten                                     |
 | `/chat/:agentId?`          | Chat mit SSE-Streaming und Abbrechen                    |
-| `/simulation`              | Liste mit Suche + Status-Filter                         |
-| `/simulation/:id`          | Live-Verlauf via WebSocket, Spalten- und Vergleichsansicht, JSON-Export |
+| `/simulation`              | Liste mit Suche + Status-Filter, Anforderungs-Parsing   |
+| `/simulation/:id`          | Live-Verlauf via WebSocket, Spalten/Vergleichs/Feed-Ansicht, JSON-Export |
 | `/graphrag`                | Extraktion, interaktive SVG-Visualisierung, Abfrage     |
-| `/berichte`                | Markdown-Berichte mit Druck-/PDF-Export                 |
+| `/berichte`                | Markdown-Berichte + **Chat mit ReportAgent** + PDF      |
+| `/einstellungen`           | Provider, Modelle, Key-Status, Datenbank-Dialekt        |
 
 ## Lizenz
 

@@ -60,6 +60,42 @@ async def test_memory_injection_persistiert_episode(client) -> None:
     assert any("Buch" in e for e in g.json())
 
 
+async def test_temporale_memory_updates_landen_im_gedaechtnis(client, llm_mock) -> None:
+    """Aktionen aus der Sim landen automatisch im Agent-Gedaechtnis."""
+    erstellt = await client.post(
+        "/api/agenten",
+        json={
+            "persona": {
+                "name": "Sim-Tester",
+                "hintergrund": "",
+                "werte": [],
+                "charakterzuege": [],
+                "beziehungen": {},
+                "sprachstil": "neutral",
+            }
+        },
+    )
+    aid = erstellt.json()["id"]
+    s = await client.post(
+        "/api/simulation",
+        json={
+            "name": "Memory-Test",
+            "agent_ids": [aid],
+            "schritte": 2,
+            "variable": {},
+            "dual_modus": False,
+        },
+    )
+    sid = s.json()["id"]
+    await client.post(f"/api/simulation/{sid}/starte?sofort=true")
+
+    g = await client.get(f"/api/agenten/{aid}/gedaechtnis")
+    assert g.status_code == 200
+    eintraege = g.json()
+    # 2 Schritte * 1 Welt = 2 Eintraege erwartet
+    assert any("Sim-Tester" in e and "Schritt" in e for e in eintraege)
+
+
 async def test_bericht_chat_nutzt_simulation(client, llm_mock) -> None:
     a = await client.post(
         "/api/agenten",
