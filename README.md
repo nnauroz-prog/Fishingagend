@@ -4,16 +4,19 @@
 
 Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert eine digitale Parallelwelt mit hunderten von intelligenten Agenten. Jeder Agent besitzt eine eigenständige Persönlichkeit, ein Langzeitgedächtnis und entwickelt sich in einer sozialen Simulation weiter. Über das Einspeisen von Variablen lassen sich zukünftige Verläufe ableiten.
 
+![Backend tests](https://img.shields.io/badge/backend%20tests-17%2F17%20%E2%9C%93-success)
+![Frontend tests](https://img.shields.io/badge/frontend%20tests-12%2F12%20%E2%9C%93-success)
+
 ## Architektur
 
-| Schicht       | Stack                                                            |
-|---------------|------------------------------------------------------------------|
-| Backend       | Python 3.11+, FastAPI, Pydantic v2, `uv`                         |
-| Frontend      | Vue 3, Vite, TypeScript, Tailwind CSS, Pinia, Vue Router, Vue I18n |
-| LLM           | Anthropic Claude (`claude-opus-4-7`) via offizielles SDK         |
-| Persistenz    | SQLite (Standard), tauschbar gegen PostgreSQL                    |
-| Container     | Docker, Docker Compose                                           |
-| CI            | GitHub Actions (Ruff, pytest, Vitest, Build)                     |
+| Schicht       | Stack                                                              |
+|---------------|--------------------------------------------------------------------|
+| Backend       | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2 (Async), Alembic, `uv` |
+| Frontend      | Vue 3, Vite, TypeScript, Tailwind CSS + Typography, Pinia, Vue Router, Vue I18n, marked |
+| LLM           | Anthropic Claude (`claude-opus-4-7`) — mit Prompt-Caching und Streaming |
+| Persistenz    | SQLite (Standard), tauschbar gegen PostgreSQL via `DATENBANK_URL`  |
+| Container     | Docker, Docker Compose (Dev + Prod mit Nginx)                      |
+| CI            | GitHub Actions (Ruff, pytest, Vitest, Build)                       |
 
 ## Schnellstart
 
@@ -21,27 +24,47 @@ Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert e
 
 - Python 3.11 oder 3.12
 - Node.js 18 oder neuer
-- Ein Anthropic-API-Key (`ANTHROPIC_API_KEY`)
+- Optional: Anthropic-API-Key (`ANTHROPIC_API_KEY`) — ohne Key startet ein Mock-LLM, alle Pfade bleiben funktionsfähig.
 
-### Mit Docker Compose
+### Mit Docker Compose (Entwicklung)
 
 ```bash
-cp .env.example .env
-# ANTHROPIC_API_KEY in .env eintragen
+cp .env.example .env       # ANTHROPIC_API_KEY eintragen, optional
 docker compose up --build
 ```
 
-Frontend: <http://localhost:5173>, Backend: <http://localhost:8000/docs>
+- Frontend: <http://localhost:5173>
+- Backend + OpenAPI-Doku: <http://localhost:8000/docs>
 
-### Lokal
+### Mit Docker Compose (Produktion)
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+Frontend wird als statisches Bündel von Nginx ausgeliefert (Port 80, mit SPA-Fallback, Asset-Caching, Sicherheitsheadern).
+
+### Lokal — mit Makefile
+
+```bash
+make install      # Backend + Frontend Abhängigkeiten
+make migrate      # Alembic-Migration ausführen
+make dev          # backend (8000) + frontend (5173) parallel
+make test         # alle Tests
+make lint         # Ruff + Vue-TSC
+make build        # Frontend-Production-Build
+```
+
+### Lokal — ohne Makefile
 
 ```bash
 # Backend
 cd backend
-uv sync           # oder: pip install -e .
-uv run python run.py
+pip install -r requirements.txt
+alembic upgrade head
+python run.py
 
-# Frontend (in zweitem Terminal)
+# Frontend (zweites Terminal)
 cd frontend
 npm install
 npm run dev
@@ -51,68 +74,85 @@ npm run dev
 
 ```
 .
-├── backend/              FastAPI-Anwendung mit Multi-Agenten-Logik
+├── backend/
+│   ├── alembic/             Migrationen (Initial-Schema vorhanden)
 │   ├── app/
-│   │   ├── api/          REST-Endpunkte
-│   │   ├── modelle/      Pydantic-Modelle (Agenten, Personas, Simulation)
-│   │   ├── dienste/      Geschäftslogik (LLM, GraphRAG, Gedächtnis)
-│   │   └── werkzeuge/    Hilfsfunktionen
-│   └── tests/            pytest-Suite
-├── frontend/             Vue-3-Single-Page-Anwendung
-│   └── src/
-│       ├── api/          HTTP-Clients
-│       ├── components/   wiederverwendbare Komponenten
-│       ├── views/        Seiten (Startseite, Agenten, Chat, Simulation, Berichte)
-│       ├── store/        Pinia-Stores
-│       ├── router/       Vue Router
-│       └── i18n/         Übersetzungen (de, en)
-├── locales/              gemeinsame Übersetzungen
-├── docker-compose.yml
-└── .github/workflows/    CI-Pipeline
+│   │   ├── api/             REST-Endpunkte (agenten, chat, simulation, berichte, graphrag, zustand)
+│   │   ├── modelle/         Pydantic-Modelle
+│   │   ├── dienste/         Geschäftslogik (LLM, Persona, GraphRAG, Simulation, Bericht, Gedächtnis)
+│   │   ├── werkzeuge/       Hilfsfunktionen (logger)
+│   │   ├── datenbank.py     SQLAlchemy-Setup
+│   │   ├── config.py        Pydantic-Settings
+│   │   └── main.py          FastAPI-Anwendung
+│   ├── scripts/             Beispiel-Skripte
+│   ├── tests/               pytest-Suite (17 Tests)
+│   ├── alembic.ini
+│   ├── pyproject.toml
+│   └── run.py
+├── frontend/
+│   ├── src/
+│   │   ├── api/             axios-Clients + SSE-Stream
+│   │   ├── components/      AgentKarte, ChatNachricht, SimulationsAnzeige, ToastSchicht, Navigationsleiste
+│   │   ├── views/           Startseite, Agenten, AgentDetail, Chat, Simulation, SimulationDetail, GraphRAG, Berichte, NichtGefunden
+│   │   ├── store/           Pinia-Stores (agenten, simulation, toasts)
+│   │   ├── router/
+│   │   ├── i18n/            Lokalisierung (de, en)
+│   │   └── werkzeuge/       (markdown)
+│   ├── tests/               Vitest-Suite (12 Tests)
+│   ├── Dockerfile           (Dev — Vite-Server)
+│   ├── Dockerfile.prod      (Prod — Multi-Stage + Nginx)
+│   └── nginx.conf
+├── locales/                 Backend-Lokalisierungen
+├── docker-compose.yml       Entwicklung
+├── docker-compose.prod.yml  Produktion (Nginx + restart-Politik)
+├── Makefile
+└── .github/workflows/ci.yml CI-Pipeline
 ```
 
 ## Module
 
 ### GraphRAG-Aufbau und Entitäts-Extraktion
-Texte werden in Chunks zerlegt; pro Chunk fragt das LLM nach Entitäten (Person, Organisation, Ort, Konzept, Ereignis) und Beziehungen, die anschließend dedupliziert in einem Wissensgraphen landen. Siehe `backend/app/dienste/graphrag_dienst.py`.
+Texte werden in Chunks zerlegt; pro Chunk extrahiert das LLM Entitäten (Person, Organisation, Ort, Konzept, Ereignis) und Beziehungen, die anschließend dedupliziert in einem Wissensgraphen landen. Befragbar via natürlicher Sprache. UI: `/graphrag`.
 
 ### Persona-Generierung
-Aus Saat-Stichworten wird via LLM eine vollständige Persona erzeugt — Name, Alter, Beruf, Hintergrund, Werte, Charakterzüge, Sprachstil. Robustes JSON-Parsing, das auch Markdown-Fences toleriert. Siehe `backend/app/dienste/persona_dienst.py`.
+Aus Saat-Stichworten erzeugt das LLM eine vollständige Persona — Name, Alter, Beruf, Hintergrund, Werte, Charakterzüge, Sprachstil. Robustes JSON-Parsing toleriert Markdown-Fences. Im Mock-Modus wird ein Default zurückgegeben.
 
 ### Dual-Welt-Simulation
-Zwei Welten laufen parallel: in der Kontroll-Welt agieren die Agenten ohne externe Variable, in der Varianten-Welt mit. Pro Schritt entscheidet jeder Agent (LLM-Aufruf) seine nächste Aktion auf Basis des bisherigen Verlaufs. Läuft im Hintergrund — der `POST /api/simulation/{id}/starte`-Endpunkt antwortet sofort, das Frontend pollt den Status. Mit `?sofort=true` läuft sie synchron. Siehe `backend/app/dienste/simulation_dienst.py`.
+Zwei Welten laufen parallel: Kontroll-Welt ohne externe Variable, Varianten-Welt mit. Pro Schritt entscheidet jeder Agent (LLM-Aufruf) seine nächste Aktion auf Basis des bisherigen Verlaufs. Läuft im Hintergrund (`POST /api/simulation/{id}/starte` antwortet sofort, das Frontend pollt alle 2 s den Status auf der Detail-Seite). Mit `?sofort=true` läuft sie synchron.
 
 ### Berichts-Agent
-Aggregiert Schritte, schickt sie als Anweisung an das LLM und erhält einen Markdown-Bericht mit Zusammenfassung, Beobachtungen je Welt, Schlüsselereignissen und Empfehlung. Siehe `backend/app/dienste/bericht_dienst.py`.
+Aggregiert Schritte, schickt sie als Anweisung an das LLM und erhält einen Markdown-Bericht mit Zusammenfassung, Beobachtungen je Welt, Schlüsselereignissen und Empfehlung. Frontend rendert das Markdown via `marked` mit Tailwind-Typography.
 
-### Chat
-Direktes Gespräch mit einem simulierten Agenten — inklusive Kontext aus dessen Langzeit-Gedächtnis (in der DB persistiert). Persona-Block ist via Prompt-Caching markiert. Siehe `backend/app/api/chat.py`.
+### Chat (mit Streaming)
+Direktes Gespräch mit einem simulierten Agenten — Antwort kommt zeichenweise via Server-Sent Events. Persona-Block ist Prompt-gecached; Langzeit-Gedächtnis steht in der DB und wird in den System-Prompt eingespeist.
 
 ### Persistenz
-SQLAlchemy mit Async-SQLite; Tabellen werden beim Start automatisch erstellt. PostgreSQL: einfach `DATENBANK_URL` umstellen.
+SQLAlchemy mit Async-SQLite; PostgreSQL via `DATENBANK_URL` umstellbar. Schema-Verwaltung über Alembic — `alembic upgrade head` oder `make migrate`.
 
 ### Mock-LLM für Entwicklung & Tests
-Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. Die Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — also auch ohne API-Key komplett deckungsgleich.
+Ohne `ANTHROPIC_API_KEY` startet die App mit einem deterministischen Mock-LLM. Tests injizieren ihren eigenen Mock und prüfen sowohl die Ausgabe als auch den exakt gesendeten Prompt — die App ist damit ohne API-Key komplett benutzbar.
 
-## Entwicklung
+## API-Übersicht
 
-```bash
-# Backend-Tests + Lint
-cd backend && uv run pytest && uv run ruff check .
+| Methode | Pfad                              | Beschreibung                                |
+|---------|-----------------------------------|---------------------------------------------|
+| GET     | `/api/zustand`                    | Health-Check                                |
+| GET     | `/api/agenten`                    | Liste aller Agenten                         |
+| POST    | `/api/agenten`                    | Agent anlegen                               |
+| GET     | `/api/agenten/{id}`               | Agent abrufen                               |
+| DELETE  | `/api/agenten/{id}`               | Agent löschen                               |
+| POST    | `/api/agenten/aus-saat`           | Persona-Vorschlag via LLM                   |
+| POST    | `/api/chat`                       | Chat (Antwort als JSON)                     |
+| POST    | `/api/chat/strom`                 | Chat (SSE-Streaming)                        |
+| GET     | `/api/simulation`                 | Simulationen auflisten                      |
+| POST    | `/api/simulation`                 | Simulation planen                           |
+| GET     | `/api/simulation/{id}`            | Simulation samt Verlauf                     |
+| POST    | `/api/simulation/{id}/starte`     | Starten (Hintergrund; `?sofort=true` synchron) |
+| GET     | `/api/berichte/{id}`              | Markdown-Bericht                            |
+| POST    | `/api/graphrag/extrahieren`       | Entitäten + Beziehungen extrahieren         |
+| POST    | `/api/graphrag/abfrage`           | Wissensgraph befragen                       |
 
-# Frontend-Tests + Typcheck + Lint
-cd frontend && npm test && npm run typecheck && npm run lint
-```
-
-## Verbesserungen gegenüber dem Original
-
-- Vue 3 (Composition API) + Vite + TypeScript statt Vue 2 / Webpack / JS
-- FastAPI statt monolithischer Flask-Struktur
-- Anthropic-SDK direkt integriert, OpenAI-Kompatibilität bleibt optional
-- Tailwind-basiertes UI mit Dark Mode
-- Vollständige deutsche Lokalisierung
-- Tests + CI ab Tag 1
-- Sauber getrennte Schichten (`api/` ↔ `dienste/` ↔ `modelle/`)
+Vollständige OpenAPI-Doku unter `/docs`.
 
 ## Lizenz
 

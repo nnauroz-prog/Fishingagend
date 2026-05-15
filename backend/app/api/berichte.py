@@ -20,7 +20,7 @@ async def bericht(
     sim_dienst: SimulationDienst = Depends(hole_simulation_dienst),
     bericht_dienst: BerichtDienst = Depends(hole_bericht_dienst),
 ) -> dict[str, str]:
-    sim = sim_dienst.hole(sim_id)
+    sim = await sim_dienst.hole(sim_id)
     if sim is None:
         raise HTTPException(status_code=404, detail="Simulation nicht gefunden")
     inhalt = await bericht_dienst.erstelle_bericht(sim)

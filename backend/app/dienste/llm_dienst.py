@@ -158,7 +158,12 @@ class MockLLMDienst:
         temperatur: float = 0.3,
     ) -> dict[str, Any]:
         antwort = await self.antworte(system_prompt, [{"role": "user", "content": anweisung}])
-        return _parse_json(antwort.text)
+        try:
+            return _parse_json(antwort.text)
+        except (json.JSONDecodeError, ValueError):
+            # Sinnvoller Default fuer den Mock-Modus ohne API-Key, sodass
+            # Persona-/GraphRAG-Pfade auch lokal lauffaehig sind.
+            return {"name": "Mock-Persona", "entitaeten": [], "beziehungen": []}
 
     async def stroeme(
         self,
