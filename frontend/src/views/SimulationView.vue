@@ -99,7 +99,12 @@ async function planen() {
 
 <template>
   <section class="space-y-6">
-    <h1 class="text-2xl font-bold">{{ t('simulation.titel') }}</h1>
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">{{ t('simulation.titel') }}</h1>
+      <RouterLink to="/simulation/vergleich" class="knopf-sekundaer text-xs">
+        ⇆ {{ t('vergleich.titel') }}
+      </RouterLink>
+    </header>
 
     <article class="karte space-y-3">
       <h2 class="text-sm font-semibold uppercase text-slate-500">

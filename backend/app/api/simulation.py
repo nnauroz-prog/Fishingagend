@@ -36,6 +36,41 @@ async def plane(
     return await dienst.plane(eingabe)
 
 
+class BatchAnfrage(BaseModel):
+    """Eine Vorlage + mehrere Variablen-Wert-Kombinationen.
+
+    Erzeugt n Simulationen mit identischer Vorlage, aber unterschiedlicher
+    `variable`. Praktisch fuer Sensitivitaets-Analysen.
+    """
+
+    vorlage: SimulationErstellen
+    variablen_serie: list[dict] = Field(min_length=1, max_length=20)
+    sofort_starten: bool = False
+
+
+@router.post("/batch", response_model=list[Simulation])
+async def batch(
+    anfrage: BatchAnfrage,
+    hintergrund: BackgroundTasks,
+    dienst: SimulationDienst = Depends(hole_simulation_dienst),
+) -> list[Simulation]:
+    """Legt fuer jede Variable in `variablen_serie` eine Sim an."""
+    angelegt: list[Simulation] = []
+    for i, variable in enumerate(anfrage.variablen_serie):
+        eingabe = anfrage.vorlage.model_copy(
+            update={
+                "name": f"{anfrage.vorlage.name} #{i + 1}",
+                "variable": variable,
+            }
+        )
+        sim = await dienst.plane(eingabe)
+        angelegt.append(sim)
+        if anfrage.sofort_starten:
+            hintergrund.add_task(dienst.starte, sim.id)
+    return angelegt
+
+
+
 class AusTextAnfrage(BaseModel):
     beschreibung: str = Field(min_length=10, max_length=2000)
 

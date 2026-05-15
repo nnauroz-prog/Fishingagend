@@ -117,6 +117,21 @@
     "begriffe": "Frequent terms",
     "episoden": "memory episodes"
   },
+  "vergleich": {
+    "titel": "Compare simulations",
+    "einleitung": "Pick two completed simulations — their stats and reports appear side by side.",
+    "waehle": "Select simulation ...",
+    "zu_wenig": "At least two completed simulations are required.",
+    "bericht": "Report"
+  },
+  "batch": {
+    "titel": "Batch run",
+    "einleitung": "One template, multiple variable values — sensitivity analysis in one click.",
+    "serie": "Variable series (JSON array)",
+    "serie_hinweis": "Example: [{\"temperature\": 1.0}, {\"temperature\": 1.5}, {\"temperature\": 2.0}]",
+    "start": "Start all",
+    "angelegte": "Created simulations"
+  },
   "beziehungs_graph": {
     "titel": "Relationship graph",
     "einleitung": "All agents and their learned relationships — grows after every simulation.",

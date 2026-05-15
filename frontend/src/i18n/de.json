@@ -117,6 +117,21 @@
     "begriffe": "Häufige Begriffe",
     "episoden": "Episoden im Gedächtnis"
   },
+  "batch": {
+    "titel": "Batch-Lauf",
+    "einleitung": "Eine Vorlage, mehrere Variablen-Werte — Sensitivitäts-Analyse auf Knopfdruck.",
+    "serie": "Variablen-Serie (JSON-Array)",
+    "serie_hinweis": "Beispiel: [{\"temperatur\": 1.0}, {\"temperatur\": 1.5}, {\"temperatur\": 2.0}]",
+    "start": "Alle starten",
+    "angelegte": "Angelegte Simulationen"
+  },
+  "vergleich": {
+    "titel": "Simulationen vergleichen",
+    "einleitung": "Wähle zwei abgeschlossene Simulationen — ihre Statistik und Berichte stehen direkt nebeneinander.",
+    "waehle": "Simulation auswählen ...",
+    "zu_wenig": "Mindestens zwei abgeschlossene Simulationen werden gebraucht.",
+    "bericht": "Bericht"
+  },
   "beziehungs_graph": {
     "titel": "Beziehungs-Graph",
     "einleitung": "Alle Agenten und ihre gelernten Beziehungen — wächst nach jeder Simulation.",

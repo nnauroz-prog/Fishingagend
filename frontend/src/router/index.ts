@@ -40,6 +40,18 @@ export const router = createRouter({
       meta: { titel: 'Simulation' },
     },
     {
+      path: '/simulation/vergleich',
+      name: 'simulation-vergleich',
+      component: () => import('@/views/SimulationsVergleichView.vue'),
+      meta: { titel: 'Vergleich' },
+    },
+    {
+      path: '/simulation/batch',
+      name: 'simulation-batch',
+      component: () => import('@/views/BatchSimulationView.vue'),
+      meta: { titel: 'Batch' },
+    },
+    {
       path: '/simulation/:id',
       name: 'simulation-detail',
       component: () => import('@/views/SimulationDetailView.vue'),

@@ -33,4 +33,16 @@ export const simulationApi = {
     apiClient
       .post<SimulationErstellen>('/api/simulation/aus-text', { beschreibung })
       .then((r) => r.data),
+  batch: (
+    vorlage: SimulationErstellen,
+    variablen_serie: Record<string, unknown>[],
+    sofort_starten = false,
+  ) =>
+    apiClient
+      .post<Simulation[]>('/api/simulation/batch', {
+        vorlage,
+        variablen_serie,
+        sofort_starten,
+      })
+      .then((r) => r.data),
 };
