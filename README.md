@@ -10,9 +10,15 @@ Fishingagend extrahiert Saat-Informationen aus der realen Welt und konstruiert e
 
 ## 1-Klick-Deploy
 
+**Komplett gratis (ohne Kreditkarte): Hugging Face Spaces.**
+
+Anleitung in 4 Schritten: [`spaces/SETUP.md`](spaces/SETUP.md). Danach pusht jeder GitHub-Commit automatisch in dein Space, du klickst nichts mehr.
+
+**Mit Kreditkarte: Render**
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/nnauroz-prog/fishingagend/tree/claude/general-session-utthR)
 
-Knopf auf dem Handy oder Desktop klicken → mit GitHub bei Render anmelden → die `render.yaml` wird automatisch erkannt und Backend + Frontend deployen sich. Nach ~5 min hast du eine `.onrender.com`-URL, die du direkt im Mobil-Browser nutzen kannst.
+Knopf klicken → mit GitHub bei Render anmelden → die `render.yaml` wird automatisch erkannt und Backend + Frontend deployen sich.
 
 ## Architektur
 

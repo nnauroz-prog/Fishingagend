@@ -1,0 +1,70 @@
+name: Sync nach Hugging Face Space
+
+# Bei jedem Push auf den Branch synchronisieren wir den Code in das
+# Hugging-Face-Space. Damit das laeuft, brauchst du genau ZWEI GitHub-Secrets:
+#
+#   HF_USER  — dein Hugging-Face-Nutzername (z. B. "anna")
+#   HF_TOKEN — ein Write-Token aus https://huggingface.co/settings/tokens
+#
+# Beide setzt du in deinem GitHub-Repo unter
+#   Settings -> Secrets and variables -> Actions -> New repository secret
+#
+# Das Space muss vorher EINMAL existieren (kann auch leer sein):
+#   https://huggingface.co/new-space -> SDK: Docker, Name: fishingagend
+#
+# Danach laeuft jeder Push automatisch ins Space. Auf dem Handy ist die
+# Token-Eingabe das einzige, was du ueberhaupt tun musst.
+
+on:
+  push:
+    branches: [claude/general-session-utthR]
+  workflow_dispatch:
+
+concurrency:
+  group: hf-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.repository_owner != ''
+    steps:
+      - name: Repo auschecken
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false
+
+      - name: Voraussetzungen pruefen
+        env:
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_USER" ] || [ -z "$HF_TOKEN" ]; then
+            echo "::warning::HF_USER oder HF_TOKEN fehlt — Sync wird uebersprungen."
+            echo "skip=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: HF-README in die Wurzel uebernehmen
+        if: env.skip != 'true'
+        run: |
+          cp spaces/README.md README.md.hf
+          # Wir pushen mit dem HF-spezifischen README, damit das Space die
+          # YAML-Frontmatter (sdk: docker, app_port: 8000) sieht. Auf GitHub
+          # bleibt unsere normale README unangetastet.
+          mv README.md.hf README.md
+
+      - name: Zu Hugging Face pushen
+        if: env.skip != 'true'
+        env:
+          HF_USER: ${{ secrets.HF_USER }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.email "ci@fishingagend.local"
+          git config user.name "fishingagend-ci"
+          git add README.md
+          git diff --cached --quiet || git commit -m "ci: HF-README"
+          REMOTE="https://${HF_USER}:${HF_TOKEN}@huggingface.co/spaces/${HF_USER}/fishingagend"
+          git push "$REMOTE" HEAD:main --force
+          echo "Push erfolgreich → https://huggingface.co/spaces/${HF_USER}/fishingagend"
