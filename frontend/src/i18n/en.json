@@ -12,9 +12,16 @@
     "simulation": "Simulation",
     "graphrag": "Knowledge graph",
     "berichte": "Reports",
+    "vorlagen": "Templates",
     "einstellungen": "Settings",
     "audit": "Audit log",
     "thema_wechseln": "Toggle theme"
+  },
+  "vorlagen": {
+    "titel": "Simulation templates",
+    "einleitung": "Pre-made scenarios — one click creates the agents and optionally starts the simulation.",
+    "start_sofort": "▶ Start",
+    "nur_anlegen": "Just create"
   },
   "auth": {
     "anmelden": "Sign in",

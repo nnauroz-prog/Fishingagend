@@ -76,6 +76,12 @@ export const router = createRouter({
       meta: { titel: 'Pipeline' },
     },
     {
+      path: '/vorlagen',
+      name: 'vorlagen',
+      component: () => import('@/views/VorlagenView.vue'),
+      meta: { titel: 'Vorlagen' },
+    },
+    {
       path: '/einstellungen',
       name: 'einstellungen',
       component: () => import('@/views/EinstellungenView.vue'),

@@ -12,9 +12,16 @@
     "simulation": "Simulation",
     "graphrag": "Wissensgraph",
     "berichte": "Berichte",
+    "vorlagen": "Vorlagen",
     "einstellungen": "Einstellungen",
     "audit": "Audit-Log",
     "thema_wechseln": "Thema wechseln"
+  },
+  "vorlagen": {
+    "titel": "Sim-Vorlagen",
+    "einleitung": "Fertige Szenarien — ein Klick legt die Agenten an und startet (optional) die Simulation.",
+    "start_sofort": "▶ Starten",
+    "nur_anlegen": "Nur anlegen"
   },
   "auth": {
     "anmelden": "Anmelden",
