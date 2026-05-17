@@ -73,7 +73,11 @@
   "startseite": {
     "ueberschrift": "Willkommen bei Fishingagend",
     "einleitung": "Erstelle Agenten mit eigener Persönlichkeit, lasse sie in einer simulierten Welt interagieren und beobachte, wie sich Entscheidungen auf die Zukunft auswirken.",
-    "los": "Loslegen"
+    "los": "Loslegen",
+    "letzte_sims": "Letzte Simulationen",
+    "keine_sims": "Noch keine Simulationen. Starte mit einer Vorlage.",
+    "vorlagen": "Vorlagen-Quickstart",
+    "letzte_aktivitaet": "Letzte Aktivität"
   },
   "agenten": {
     "titel": "Agenten",
