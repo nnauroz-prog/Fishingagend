@@ -1,76 +1,74 @@
-# Hugging Face Spaces — Deploy in 4 Schritten
+# Hugging Face Spaces — 100 % gratis, ohne Karte
 
-100 % gratis, ohne Kreditkarte. Geht auf dem Handy.
+## Schnellster Weg (auf dem Handy machbar)
 
-## 1. Account anlegen
+Diese 5 Schritte musst du **einmal** machen. Danach läuft jeder GitHub-Commit
+automatisch in dein Space.
 
-<https://huggingface.co/join> — Email + Passwort, **keine Karte gefragt**.
+### 1. Hugging-Face-Account anlegen
+<https://huggingface.co/join> — Email + Passwort, **keine Karte**.
 
-## 2. Neues Space anlegen
-
+### 2. Leeres Space erstellen
 <https://huggingface.co/new-space>
 
 | Feld | Wert |
 |------|------|
-| Owner | dein Nutzername |
+| Owner | dein HF-Nutzername |
 | Space name | `fishingagend` |
 | License | `agpl-3.0` |
-| Select the Space SDK | **Docker → Blank** |
-| Space hardware | `CPU basic · 2 vCPU · 16 GB · FREE` |
-| Public/Private | Public (für gratis) |
+| SDK | **Docker → Blank** |
+| Hardware | `CPU basic — FREE` |
+| Public/Private | Public |
 
-Klick **Create Space**.
+Klick **Create Space**. Das Space ist erst mal leer — das ist OK.
 
-## 3. Code in das Space schaufeln
+### 3. HF-Access-Token erstellen
+<https://huggingface.co/settings/tokens> → **"New token"**:
 
-Im neuen Space klick auf **"Files"** → oben rechts **"⋮"** → **"Upload files"**.
+| Feld | Wert |
+|------|------|
+| Name | `github-sync` |
+| Type | **Write** |
 
-Es ist auf dem Handy unhandlich, alle Dateien per Hand hochzuladen.
-Drei Wege, je nach deiner Lust:
+Token kopieren — du brauchst ihn gleich.
 
-### 3a. Per Action automatisch synchronisieren (einmaliges Setup)
+### 4. Zwei GitHub-Secrets setzen
+Auf <https://github.com/nnauroz-prog/fishingagend/settings/secrets/actions>:
 
-Wenn du das Setup einmal auf einem Desktop machst, läuft danach jedes
-GitHub-Push automatisch in das HF-Space. Anleitung:
-<https://huggingface.co/docs/hub/spaces-github-actions>
+| Name | Wert |
+|------|------|
+| `HF_USER` | dein HF-Nutzername aus Schritt 2 |
+| `HF_TOKEN` | das Token aus Schritt 3 |
 
-### 3b. Klone das GitHub-Repo lokal und pushe es zum Space (3 Befehle)
+### 5. Sync auslösen
+Auf <https://github.com/nnauroz-prog/fishingagend/actions/workflows/hf-sync.yml>
+→ **"Run workflow"** → Branch `claude/general-session-utthR` → **"Run"**.
 
-```bash
-git clone https://github.com/nnauroz-prog/fishingagend.git
-cd fishingagend
-git checkout claude/general-session-utthR
-# Dein HF-Space als zusätzlichen Remote hinzufügen:
-git remote add space https://huggingface.co/spaces/DEIN_USERNAME/fishingagend
-# README für HF (mit YAML-Frontmatter) an die Wurzel kopieren:
-cp spaces/README.md README.md
-git add README.md && git commit -m "HF-Spaces-Header"
-git push space claude/general-session-utthR:main
-```
+Nach ~30 Sekunden ist dein Space gefüllt. Ab jetzt synct jeder
+zukünftige GitHub-Push automatisch.
 
-### 3c. Manuell auf dem Handy hochladen
+## Deine URL
 
-In der Space-Files-UI:
+<https://huggingface.co/spaces/DEIN_USERNAME/fishingagend>
 
-1. Lade `Dockerfile` aus dem GitHub-Repo hoch (Wurzel).
-2. Lade `spaces/README.md` als `README.md` hoch.
-3. Lade den Ordner `backend/` hoch (Files-UI unterstützt Drag&Drop).
-4. Lade den Ordner `frontend/` hoch.
+Der erste Build dauert ~5 min (Docker baut Frontend + Backend),
+spätere Builds nur ~2 min. Im Space siehst du das Logs-Tab mit Live-Output.
 
-(Das ist mühsam. 3a oder 3b sind einfacher.)
-
-## 4. Geheimnisse setzen (optional)
+## Optional: echtes Claude statt Mock-LLM
 
 Im Space → **Settings** → **Repository secrets** → "New secret":
 
 | Name | Wert |
 |------|------|
-| `ANTHROPIC_API_KEY` | dein Anthropic-Key (sonst Mock-LLM) |
-| `JWT_GEHEIMNIS` | beliebiger langer String |
+| `ANTHROPIC_API_KEY` | dein Anthropic-Key |
 
-Nach jedem Secret-Setzen restartet das Space automatisch.
+Space restartet automatisch.
 
-## Fertig
+## Wenn was nicht klappt
 
-Die URL ist `https://huggingface.co/spaces/DEIN_USERNAME/fishingagend`.
-Direkt im Mobil-Browser nutzbar.
+- **Action grün, aber Space-Build fehlschlägt** → Logs-Tab im Space, meist
+  Tippfehler in env-Vars.
+- **Action selbst fehlschlägt** → Logs-Link in GitHub-Actions-Run.
+  Häufigste Ursache: HF_TOKEN nicht "Write"-Permission.
+- **Space schläft ein** → Free-Tier wacht beim ersten Request automatisch
+  wieder auf (~30 s).
