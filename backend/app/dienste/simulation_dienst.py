@@ -160,6 +160,11 @@ class SimulationDienst:
             zeilen = (
                 await session.execute(select(AgentZeile).where(AgentZeile.id.in_(ids)))
             ).scalars().all()
+            # Reihenfolge entsprechend der uebergebenen IDs erhalten —
+            # SQL `IN` gibt keine bestimmte Sortierung zurueck, das ist aber
+            # entscheidend fuer Plattform-Sims, in denen Agent A vor Agent B
+            # handeln soll, wenn er zuerst angelegt wurde.
+            index = {z.id: z for z in zeilen}
             return [
                 Agent(
                     id=z.id,
@@ -168,7 +173,8 @@ class SimulationDienst:
                     erstellt_am=z.erstellt_am,
                     aktualisiert_am=z.aktualisiert_am,
                 )
-                for z in zeilen
+                for aid in ids
+                if (z := index.get(aid)) is not None
             ]
 
     async def _schritt_in_welt(
