@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 
+import MockBanner from '@/components/MockBanner.vue';
 import Navigationsleiste from '@/components/Navigationsleiste.vue';
 import ToastSchicht from '@/components/ToastSchicht.vue';
 
@@ -16,6 +17,7 @@ onMounted(() => {
 <template>
   <div class="flex h-full flex-col">
     <Navigationsleiste />
+    <MockBanner />
     <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
       <RouterView v-slot="{ Component, route }">
         <Transition name="seite" mode="out-in">

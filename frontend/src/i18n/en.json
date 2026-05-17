@@ -27,6 +27,11 @@
     "zur_registrierung": "No account? Register now →",
     "zur_anmeldung": "← Already have an account? Sign in"
   },
+  "mock_banner": {
+    "titel": "Mock LLM active",
+    "text": "No API key set — answers are deterministic placeholders. Real answers with an Anthropic key.",
+    "link": "Get a key"
+  },
   "audit": {
     "titel": "Audit log",
     "einleitung": "All write actions with timestamp and details — newest first.",

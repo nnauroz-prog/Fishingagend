@@ -27,6 +27,11 @@
     "zur_registrierung": "Noch kein Konto? Jetzt registrieren →",
     "zur_anmeldung": "← Schon ein Konto? Hier anmelden"
   },
+  "mock_banner": {
+    "titel": "Mock-LLM aktiv",
+    "text": "Es ist kein API-Key gesetzt — Antworten sind deterministische Platzhalter. Echte Antworten gibt es mit einem Anthropic-Key.",
+    "link": "Key holen"
+  },
   "audit": {
     "titel": "Audit-Log",
     "einleitung": "Alle schreibenden Aktionen mit Zeitstempel und Details — chronologisch absteigend.",

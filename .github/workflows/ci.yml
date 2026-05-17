@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, claude/general-session-utthR]
   pull_request:
 
 jobs:
@@ -51,3 +51,37 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  docker:
+    # Smoke-Test, dass der Multi-Stage-Container baut, den HF Spaces und
+    # Render im Produktions-Deploy nutzen. Fängt kaputte Frontend-/Backend-
+    # Dockerfile-Kombinationen, bevor sie auf der Plattform fehlschlagen.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Image bauen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: fishingagend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Container kurz starten und Health-Check
+        run: |
+          docker run -d --name fishingagend -p 8000:8000 \
+            -e DEMO_DATEN_EINSPIELEN=false \
+            -e CORS_URSPRUENGE="*" \
+            fishingagend:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/api/zustand > /tmp/zustand.json 2>/dev/null; then
+              echo "Health-Check ok:"
+              cat /tmp/zustand.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health-Check fehlgeschlagen — Logs:"
+          docker logs fishingagend
+          exit 1
